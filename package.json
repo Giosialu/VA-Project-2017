@@ -1,0 +1,28 @@
+{
+  "name": "vast2015mc2",
+  "version": "1.0.0",
+  "description": "My own representation of the data of the Mini Challenge 2 in the VAST Challenge of 2015",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "yes"
+  },
+  "keywords": [
+    "VAST",
+    "CHALLENGE",
+    "2015",
+    "MC2"
+  ],
+  "author": "Giosi Alessandro",
+  "license": "ISC",
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "d3": "^3.5.17",
+    "express": "^4.15.3",
+    "mysql": "^2.13.0",
+    "nvd3": "^1.8.5"
+  }
+}
