@@ -1,0 +1,31 @@
+main {
+	padding: 10px;
+}
+
+h1 {
+	text-align: center;
+	margin-bottom: 16px;
+}
+
+h2 {
+	font-size: 22px;
+	text-align: center;
+}
+
+.col-md-2 {
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	margin: 10px 0px;
+}
+
+.nav-tabs li {
+	cursor: pointer;
+}
+
+@media (min-width: 1000px) {
+
+	.col-md-2 {
+		height: 80vh;
+	}
+
+}
