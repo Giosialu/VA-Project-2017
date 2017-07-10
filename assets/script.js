@@ -50,11 +50,46 @@ function createNodeChart() {
 		d3.select("svg")
 			.datum(data)
 			.call(nodeChart);
-		  
+		
+		nv.utils.windowResize(nodeChart.update);
+		
 		return nodeChart;
 		
     });
 
+}
+
+function createBarChart() {
+	
+	nv.addGraph(function() {
+		
+        barChart = nv.models.multiBarChart()
+            .duration(300)
+			.forceY([0,50000]);
+		
+        barChart.xAxis
+            .axisLabel("Luogo e ora")
+            .axisLabelDistance(5)
+            .tickFormat(function(d) { 
+				return d3.time.format('%H:%M')(new Date(d)); 
+			});
+		
+        barChart.yAxis
+            .axisLabel("Comunicazioni")
+            .axisLabelDistance(-5)
+            .tickFormat(d3.format('d'))
+			.showMaxMin(false);
+		
+        d3.select('svg')
+            .datum(data)
+            .call(barChart);
+			
+        nv.utils.windowResize(barChart.update);
+		
+        return barChart;
+		
+    });
+	
 }
 
 function updateSizes() {
@@ -63,24 +98,30 @@ function updateSizes() {
 }
 
 function updatePage() {
-	
-	$("#loader").fadeIn();
-	
+
 	updateSizes();
 	
 	switch (chart) {
 		
 		case "node":
+		$("#loader").fadeIn();
 		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes}, function(result) {
 			data = JSON.parse(result);
+			d3.selectAll("svg > *, .nvtooltip").remove();
 			createNodeChart();
 			$("#loader").fadeOut();
 		});
 		break;
 		
 		case "bar":
-		$.get("barRequest", {day: day}, function(result) {
-			
+		d3.json("assets/data/barData" + day + ".json", function(err, result) {
+			if (err) throw err;
+			result.forEach(function(d) {
+				d.Timestamp = new Date(d.Timestamp);
+			})
+			data = result;
+			d3.selectAll("svg > *, .nvtooltip").remove();
+			createBarChart();
 		});
 		break;
 		
