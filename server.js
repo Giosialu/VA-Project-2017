@@ -10,7 +10,6 @@ var server = app.listen(8080, function(err) {
 	if (err) throw err;
 	console.log("The server is listening on :8080.");
 	
-	//Opzioni delle due connessioni
 	conn = mysql.createConnection({
 		host: "localhost",
 		user: "root",
@@ -18,7 +17,6 @@ var server = app.listen(8080, function(err) {
 		database: "Communications"
 	});
 	
-	//Creazione delle due connessioni
 	conn.connect(function(err) {
 		if (err) throw err;
 		console.log("Successfully connected to the db.");
