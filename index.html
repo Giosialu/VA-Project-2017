@@ -17,6 +17,13 @@
 			<h1>VAST CHALLENGE MC2</h1>
 			<div class="col-md-2">
 				<h2>Visualizzazioni</h2>
+				<nav>
+					<ol class="nav nav-pills nav-stacked">
+						<li data-chart="node" class="active"><a>Nodi</a></li>
+						<li data-chart="bar"><a>Aree</a></li>
+						<li data-chart="line"><a>Patterns</a></li>
+					</ol>
+				</nav>
 			</div>
 			<div class="col-md-8">
 				<nav>
@@ -26,10 +33,17 @@
 						<li data-day="Sunday"><a>Domenica</a></li>
 					</ol>
 				</nav>
-				<svg>Il tuo browser non supporta grafica SVG.</svg>
+				<div id="svgContainer">
+					<svg>Il tuo browser non supporta grafica SVG.</svg>
+					<div id="loader">
+						<h3>Caricamento...</h3>
+						<div class="progress-bar progress-bar-striped active" role="progressbar"></div>
+
+					</div>
+				</div>
 			</div>
 			<div class="col-md-2">
-				<h2>Id selezionati:</h2>
+				<h2>ID selezionati:</h2>
 			</div>
 		</main>
 	</body>
