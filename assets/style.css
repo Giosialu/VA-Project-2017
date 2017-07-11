@@ -1,6 +1,12 @@
 			/* Interfaccia */
 * {
 	box-sizing: border-box !important;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 main {
@@ -24,6 +30,31 @@ h2 {
 	margin: 10px 0px;
 }
 
+#selectionContainer {
+	overflow: hidden;
+	padding: 0px;
+}
+
+#selectionViewer {
+	height: calc(100% - 64px);
+	overflow: auto;
+	padding: 10px;
+	display: flex;
+	justify-content: flex-start;
+	flex-wrap: wrap;
+	align-content: flex-start;
+}
+
+.selectionLabel {
+	text-align: center;
+	height: 25px;
+	margin: 2px;
+	border: 1px solid #bbb;
+	border-radius: 6px;
+	padding: 2px 4px;
+	cursor: default;
+}
+
 .nav li {
 	cursor: pointer;
 }
@@ -45,6 +76,7 @@ h2 {
 	border-radius: 0px 4px 4px 4px;
 	width: 100%;
 	height: 76vh;
+	overflow: hidden;
 }
 
 #loader {
@@ -71,6 +103,13 @@ h2 {
 	position: absolute;
 	top: 50%;
 	left: 10%;
+}
+
+#nodeSelector {
+	stroke: blue;
+	stroke-width: 1;
+	stroke-dasharray: 5, 5;
+	fill: rgba(50, 50, 255, 0.25);
 }
 
 g.nv-force-node circle {

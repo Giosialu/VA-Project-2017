@@ -3,11 +3,13 @@
 	<head>
 		<title>VAST 2015 MC2</title>
 		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 		<script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 		<script src="node_modules/d3/d3.min.js"></script>
 		<script src="node_modules/nvd3/build/nv.d3.min.js"></script>
 		<script src="assets/script.js"></script>
+		<script src="assets/charts.js"></script>
 		<link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css" />
 		<link rel="stylesheet" href="node_modules/nvd3/build/nv.d3.min.css" />
 		<link rel="stylesheet" href="assets/style.css" />
@@ -38,12 +40,12 @@
 					<div id="loader">
 						<h3>Caricamento...</h3>
 						<div class="progress-bar progress-bar-striped active" role="progressbar"></div>
-
 					</div>
 				</div>
 			</div>
-			<div class="col-md-2">
-				<h2>ID selezionati:</h2>
+			<div class="col-md-2" id="selectionContainer">
+				<h2>Selezione</h2>
+				<div id="selectionViewer"></div>
 			</div>
 		</main>
 	</body>
