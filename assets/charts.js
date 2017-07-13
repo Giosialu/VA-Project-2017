@@ -47,7 +47,7 @@ function createNodeChart() {
 			});
 		
 		nodeChart.tooltip.contentGenerator(function(d) {
-			return '<h4>ID: ' + d.id + '</h4>\n<p>Comunicazioni in uscita: ' + d.outValue + '</p>\n<p>Comunicazioni in entrata: ' + d.inValue + '</p>';
+			return '<h4>ID: ' + d.id + '</h4>\n<p>Outbound communications: ' + d.outValue + '</p>\n<p>Inbound communications: ' + d.inValue + '</p>';
 		});
 		
 		d3.select("svg")
@@ -99,7 +99,7 @@ function createBarChart() {
 			var endDate = new Date(startDate);
 			endDate.setMinutes(endDate.getMinutes() + 30);
 			html += '<h4>'+ d3.time.format("%H:%M")(startDate) + "-" + d3.time.format("%H:%M")(endDate) + ', ' + data.key + '</h4>\n';
-			html += '<p>Comunicazioni in uscita:' + data.y + '</p>';
+			html += '<p>Outbound communications:' + data.y + '</p>';
 			return html;
 		});
 		
@@ -127,10 +127,6 @@ function createBarChart() {
 function updateSizes() {
 	chartWidth = svgContainer.clientWidth;
 	chartHeight = svgContainer.clientHeight;
-	if (selectionViewer[0].scrollHeight > selectionViewer[0].clientHeight)
-		selectionViewer.css({borderTop: "1px solid #ddd"});
-	else
-		selectionViewer.css({borderTop: "none"});
 	selectionViewer[0].scrollTop = selectionViewer[0].scrollHeight - selectionViewer[0].clientHeight;
 }
 
@@ -142,7 +138,7 @@ function updatePage() {
 		
 		case "node":
 		$("#loader").fadeIn();
-		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes}, function(result) {
+		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes, selection: (showSelection) ? JSON.stringify(selection) : "[]"}, function(result) {
 			data = JSON.parse(result);
 			d3.selectAll("svg > *, .nvtooltip").remove();
 			createNodeChart();
@@ -151,6 +147,7 @@ function updatePage() {
 		break;
 		
 		case "bar":
+		//Direi di passare al server anche qui, così aggiungiamo la visualizzazione della selezione
 		d3.json("assets/data/barData" + day + ".json", function(err, result) {
 			if (err) throw err;
 			data = result;
@@ -159,7 +156,7 @@ function updatePage() {
 		});
 		break;
 		
-		case "line":
+		case "pattern":
 		return;
 	}
 	

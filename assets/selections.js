@@ -52,8 +52,10 @@ function startNodeSelection(ev) {
 	
 	//Selezione con area
 	ctrl = ev.ctrlKey;
-	if (!ctrl)
+	if (!ctrl) {
 		selection = [];
+		updateSelectionViewer();
+	}
 	selector = d3.select("svg").append("rect").attr("id", "nodeSelector").attr("x", ev.offsetX).attr("y", ev.offsetY);
 	selecting = requestAnimationFrame(function() {
 		return nodeSelection(ev.offsetX, ev.offsetY, ev.clientX, ev.clientY);
@@ -240,13 +242,13 @@ function updateSelectionViewer() {
 			html += "</span>";
 		}
 	}
+	if (selection.length > 0)
+		document.getElementById("buttonsContainer").style.display = "flex";
+	else 
+		document.getElementById("buttonsContainer").style.display = "";
 	selectionViewer.html(html);
 	
 	//Aspetto
-	if (selectionViewer[0].scrollHeight > selectionViewer[0].clientHeight)
-		selectionViewer.css({borderTop: "1px solid #ddd"});
-	else
-		selectionViewer.css({borderTop: "none"});
 	selectionViewer[0].scrollTop = selectionViewer[0].scrollHeight - selectionViewer[0].clientHeight;
 	
 }

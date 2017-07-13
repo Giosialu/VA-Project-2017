@@ -18,34 +18,44 @@
 	<body class="container-fluid">
 		<main class="row">
 			<h1>VAST CHALLENGE MC2</h1>
-			<div class="col-md-2">
-				<h2>Visualizzazioni</h2>
+			<div class="col-md-2" id="viewsContainer">
+				<h2>Views</h2>
 				<nav>
 					<ol class="nav nav-pills nav-stacked">
-						<li data-chart="node" class="active"><a>Nodi</a></li>
-						<li data-chart="bar"><a>Aree</a></li>
-						<li data-chart="line"><a>Patterns</a></li>
+						<li data-chart="node" class="active"><a><span class="icon nodeIcon"></span>Nodes</a></li>
+						<li data-chart="bar"><a><span class="icon barIcon"></span>Areas</a></li>
+						<li data-chart="pattern"><a><span class="icon patternIcon"></span>Patterns</a></li>
 					</ol>
 				</nav>
 			</div>
 			<div class="col-md-8">
 				<nav>
 					<ol class="nav nav-tabs">
-						<li data-day="Friday" class="active"><a>Venerd&igrave;</a></li>
-						<li data-day="Saturday"><a>Sabato</a></li>
-						<li data-day="Sunday"><a>Domenica</a></li>
+						<li data-day="Friday" class="active"><a>Friday</a></li>
+						<li data-day="Saturday"><a>Saturday</a></li>
+						<li data-day="Sunday"><a>Sunday</a></li>
+						<li id="selectionTab">
+							<a>Customized<button id="closeSelection" class="close" aria-label="close selection view">&times;</button></a>
+						</li>
 					</ol>
 				</nav>
 				<div id="svgContainer">
-					<svg>Il tuo browser non supporta grafica SVG.</svg>
+					<svg>SVG is not supported in your browser.</svg>
 					<div id="loader">
-						<h3>Caricamento...</h3>
-						<div class="progress-bar progress-bar-striped active" role="progressbar"></div>
+						<h3>Loading...</h3>
+						<div class="progress-bar progress-bar-striped active"></div>
 					</div>
 				</div>
 			</div>
 			<div class="col-md-2" id="selectionContainer">
-				<h2>Selezione</h2>
+				<header>
+					<h2>Selection</h2>
+					<div id="buttonsContainer">
+						<button id="sendToNodes" class="btn btn-default"><span class="icon nodeIcon"></span>Send</button>
+						<button id="sendToBars" class="btn btn-default"><span class="icon barIcon"></span>Send</button>
+						<button id="sendToPatterns" class="btn btn-default"><span class="icon patternIcon"></span>Send</button>
+					</div>
+				</header>
 				<div id="selectionViewer"></div>
 			</div>
 		</main>

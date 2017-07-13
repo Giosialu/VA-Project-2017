@@ -2,6 +2,7 @@
 var day = "Friday";
 var chart = "node";
 var data;
+var showSelection = false;
 
 //Variabili per la dimensione dell'SVG
 var svgContainer;
@@ -56,9 +57,9 @@ var maxNodes = 250;
 
 $(document).ready(function() {
 	
-	//Interazione con pulsanti dell'interfaccia
-	function setEvents(selector, variable) {
-		var group = $(selector + " li");
+	//Pulsanti dei menù di navigazione
+	function setNavEvents(selector, variable) {
+		var group = $(selector);
 		group.on("click", function(ev) {
 			if ($(this).hasClass("active"))
 				return;
@@ -69,8 +70,37 @@ $(document).ready(function() {
 		});
 	}
 	
-	setEvents(".nav-tabs", "day");
-	setEvents(".nav-pills", "chart");
+	setNavEvents("[data-day]", "day");
+	setNavEvents("[data-chart]", "chart");
+	
+	//Pulsanti per l'invio della selezione
+	function sendSelection(chartString) {
+		showSelection = true;
+		svgContainer.style.borderRadius = "0px 0px 4px 4px";
+		$("#selectionTab").fadeIn().addClass("active");
+		$(".nav-pills li").removeClass("active");
+		$("li[data-chart='" + chartString + "']").addClass("active");
+		chart = chartString;
+		updatePage();
+	}
+	
+	$("#sendToNodes").on("click", function() {
+		return sendSelection("node");
+	});
+	$("#sendToBars").on("click", function() {
+		return sendSelection("bar");
+	});
+	$("#sendToPatterns").on("click", function() {
+		return sendSelection("pattern");
+	});
+	
+	//Pulsante per la chiusura della selezione
+	$("#closeSelection").on("click", function() {
+		showSelection = false;
+		svgContainer.style.borderRadius = "0px 4px 4px 4px";
+		$("#selectionTab").fadeOut().removeClass("active");
+		updatePage();
+	});
 	
 	//Dimensioni dell'SVG
 	svgContainer = document.getElementById("svgContainer");
