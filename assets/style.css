@@ -37,17 +37,18 @@ h2 {
 
 #selectionViewer {
 	height: calc(100% - 64px);
-	overflow: auto;
+	overflow-y: auto;
 	padding: 10px;
 	display: flex;
 	justify-content: flex-start;
+	align-items: flex-start;
 	flex-wrap: wrap;
 	align-content: flex-start;
 }
 
 .selectionLabel {
 	text-align: center;
-	height: 25px;
+	font-size: 14px;
 	margin: 2px;
 	border: 1px solid #bbb;
 	border-radius: 6px;
@@ -107,7 +108,7 @@ h2 {
 
 #nodeSelector {
 	stroke: blue;
-	stroke-width: 1;
+	stroke-width: 0.5;
 	stroke-dasharray: 5, 5;
 	fill: rgba(50, 50, 255, 0.25);
 }

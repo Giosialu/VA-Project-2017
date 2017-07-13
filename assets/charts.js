@@ -34,10 +34,10 @@ function createNodeChart() {
 						//Bordo
 						var borderStr;
 						var i = 0;
-						while (i < selection.length && (typeof(selection[i].id) != "undefined" && selection[i].id != d.id)) {
+						while (i < selection.length && selection[i].id != d.id) {
 							i++;
 						}
-						borderStr = (i < selection.length) ? "stroke: rgb(0, 0, 0); stroke-width: 1.4" : "stroke: rgba(50, 50, 50, 0.5); stroke-width: 1";
+						borderStr = (i < selection.length) ? "stroke: rgba(0, 0, 0, 0.9); stroke-width: 1.3" : "stroke: rgba(50, 50, 50, 0.5); stroke-width: 1";
 						
 						//Totale
 						return "fill: rgb(" + Math.round(r) + "," + Math.round(g) + ",0); " + borderStr;
@@ -59,13 +59,11 @@ function createNodeChart() {
 		svgContainer.scrollTop = svgContainer.scrollHeight / 3.5;
 		
 		updateLoaderPosition();
+		nv.utils.windowResize(nodeChart.update);
 		
 		circles = $("circle");
-		for (var i = 0; i < circles.length; i++) {
-			circles[i].lastTrackedStatus = (circles[i].style.stroke == "rgb(0, 0, 0)") ? "selected" : "unselected";
-		}
 		
-		nv.utils.windowResize(nodeChart.update);
+		checkNodeSelection();
 		
 		return nodeChart;
 		
@@ -93,6 +91,17 @@ function createBarChart() {
             .axisLabelDistance(-5)
             .tickFormat(d3.format('d'))
 			.showMaxMin(false);
+			
+		barChart.tooltip.contentGenerator(function(d) {
+			var html = "";
+			var data = d.data;
+			var startDate = new Date(data.x);
+			var endDate = new Date(startDate);
+			endDate.setMinutes(endDate.getMinutes() + 30);
+			html += '<h4>'+ d3.time.format("%H:%M")(startDate) + "-" + d3.time.format("%H:%M")(endDate) + ', ' + data.key + '</h4>\n';
+			html += '<p>Comunicazioni in uscita:' + data.y + '</p>';
+			return html;
+		});
 		
         d3.select('svg')
 			.attr("style", "width: 100%; height: 100%")
@@ -101,6 +110,13 @@ function createBarChart() {
 		
 		updateLoaderPosition();
         nv.utils.windowResize(barChart.update);
+		
+		barChart.dispatch.on("renderEnd", function() {
+			//Attraverso l'interazione nuove barre vengono di volta in volta create, aggiornate od eliminate, di conseguenza eseguiamo questo:
+			rects = $("rect.nv-bar");
+			rects.off("click", selectBars).on("click", selectBars);
+			checkBarSelection();
+		});
 		
         return barChart;
 		
@@ -111,6 +127,11 @@ function createBarChart() {
 function updateSizes() {
 	chartWidth = svgContainer.clientWidth;
 	chartHeight = svgContainer.clientHeight;
+	if (selectionViewer[0].scrollHeight > selectionViewer[0].clientHeight)
+		selectionViewer.css({borderTop: "1px solid #ddd"});
+	else
+		selectionViewer.css({borderTop: "none"});
+	selectionViewer[0].scrollTop = selectionViewer[0].scrollHeight - selectionViewer[0].clientHeight;
 }
 
 function updatePage() {
@@ -132,9 +153,6 @@ function updatePage() {
 		case "bar":
 		d3.json("assets/data/barData" + day + ".json", function(err, result) {
 			if (err) throw err;
-			result.forEach(function(d) {
-				d.Timestamp = new Date(d.Timestamp);
-			})
 			data = result;
 			d3.selectAll("svg > *, .nvtooltip").remove();
 			createBarChart();
