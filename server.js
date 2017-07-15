@@ -208,10 +208,20 @@ var server = app.listen(8080, function(err) {
 		var startTime = new Date();
 				
 		//Definizione presenza ID non filtrabili
-		var unfiltrable = [];		
+		var requiredIds = [];		
 		for (var i = 0; i < selection.length; i++) {
 			if (selection[i].id != undefined)
-				unfiltrable.push(selection[i].id);
+				requiredIds.push(selection[i].id);
+		}
+		
+		//Definizione degli indici non filtrabili
+		var requiredIdsIndexes = [];
+		for (var i = 0; i < requiredIds.length; i++) {
+			var j = 0;
+			while (j < data.nodes.length && data.nodes[j].id != requiredIds[i]) {
+				j++
+			}
+			requiredIdsIndexes.push(j);
 		}
 		
 		//Filtraggio dei nodi
@@ -222,9 +232,9 @@ var server = app.listen(8080, function(err) {
 				sortedNodes.push(data.nodes[i]);
 			}
 			sortedNodes.sort(function(a, b) {
-				if (unfiltrable.indexOf(a.id) != -1)
+				if (requiredIds.indexOf(a.id) != -1)
 					return -1;
-				if (unfiltrable.indexOf(b.id) != -1)
+				if (requiredIds.indexOf(b.id) != -1)
 					return 1;
 				return (b.inValue + b.outValue) - (a.inValue + a.outValue);
 			});
@@ -244,17 +254,19 @@ var server = app.listen(8080, function(err) {
 			for (var i = 0; i < data.links.length; i++) {
 				sortedLinks.push(data.links[i]);
 			}
+			var arkStartTime = new Date();
 			sortedLinks.sort(function(a, b) {
-				if (unfiltrable.indexOf(data.nodes[a.target].id) != -1 && unfiltrable.indexOf(data.nodes[a.source].id) != -1)
+				if (requiredIdsIndexes.indexOf(a.target) != -1 && requiredIdsIndexes.indexOf(a.source) != -1)
 					return -1;
-				if (unfiltrable.indexOf(data.nodes[b.target].id) != -1 && unfiltrable.indexOf(data.nodes[b.source].id) != -1)
+				if (requiredIdsIndexes.indexOf(b.target) != -1 && requiredIdsIndexes.indexOf(b.source) != -1)
 					return 1;
-				if (unfiltrable.indexOf(data.nodes[a.target].id) != -1 || unfiltrable.indexOf(data.nodes[a.source].id) != -1)
+				if (requiredIdsIndexes.indexOf(a.target) != -1 || requiredIdsIndexes.indexOf(a.source) != -1)
 					return -1;
-				if (unfiltrable.indexOf(data.nodes[b.target].id) != -1 || unfiltrable.indexOf(data.nodes[b.source].id) != -1)
+				if (requiredIdsIndexes.indexOf(b.target) != -1 || requiredIdsIndexes.indexOf(b.source) != -1)
 					return 1;
 				return (b.value) - (a.value);
 			});
+			var arkEndTime = new Date();
 			
 			var filteredLinks = [];
 			for (var i = 0; i < sortedLinks.length && filteredLinks.length < req.query.maxLinks; i++) {
@@ -291,7 +303,7 @@ var server = app.listen(8080, function(err) {
 		
 		console.log("Data processed for " + data.nodes.length + " nodes and " + data.links.length + " links.");
 		var endTime = new Date();
-		console.log("Processing required " + (endTime.getTime() - startTime.getTime()) / 1000 + " seconds.");
+		console.log("Processing required " + (endTime.getTime() - startTime.getTime()) / 1000 + " seconds (" + (arkEndTime.getTime() - arkStartTime.getTime()) / 1000 + " for links sorting).");
 		
 		sendData(data, res);
 		
