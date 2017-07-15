@@ -2,7 +2,7 @@
 var day = "Friday";
 var chart = "node";
 var data;
-var showSelection = false;
+var showSelection = [];
 
 //Variabili per la dimensione dell'SVG
 var svgContainer;
@@ -52,7 +52,7 @@ function stopSVGMotion() {
 }
 
 //Variabili per la visualizzazione dei nodi
-var maxLinks = 10000;
+var maxLinks = 5000;
 var maxNodes = 250;
 
 $(document).ready(function() {
@@ -75,7 +75,7 @@ $(document).ready(function() {
 	
 	//Pulsanti per l'invio della selezione
 	function sendSelection(chartString) {
-		showSelection = true;
+		showSelection = selection;
 		svgContainer.style.borderRadius = "0px 0px 4px 4px";
 		$("#selectionTab").fadeIn().addClass("active");
 		$(".nav-pills li").removeClass("active");
@@ -96,7 +96,7 @@ $(document).ready(function() {
 	
 	//Pulsante per la chiusura della selezione
 	$("#closeSelection").on("click", function() {
-		showSelection = false;
+		showSelection = [];
 		svgContainer.style.borderRadius = "0px 4px 4px 4px";
 		$("#selectionTab").fadeOut().removeClass("active");
 		updatePage();

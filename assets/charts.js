@@ -5,8 +5,13 @@ function createNodeChart() {
 		var nodeChart = nv.models.forceDirectedGraph()
 			
 			//Definizione della grandezza del grafico
+			.charge(-80)
+			.friction(0.8)
+			.linkDist(60)
 			.width(chartWidth * 2.5)
 			.height(chartHeight * 2.5)
+			
+			
 			
 			//Definizione proprietà dei nodi
 			.nodeExtras(function(nodes) {
@@ -44,6 +49,7 @@ function createNodeChart() {
 						
 					});
 				
+
 			});
 		
 		nodeChart.tooltip.contentGenerator(function(d) {
@@ -138,8 +144,8 @@ function updatePage() {
 		
 		case "node":
 		$("#loader").fadeIn();
-		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes, selection: (showSelection) ? JSON.stringify(selection) : "[]"}, function(result) {
-			data = JSON.parse(result);
+		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes, selection: JSON.stringify(showSelection)}, function(result) {
+			data = result;
 			d3.selectAll("svg > *, .nvtooltip").remove();
 			createNodeChart();
 			$("#loader").fadeOut();
