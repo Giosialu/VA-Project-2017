@@ -55,7 +55,7 @@ h2 {
 	background-image: url("icons/patternIcon.png");
 }
 
-.nav li {
+.nav li a {
 	cursor: pointer;
 }
 
@@ -168,10 +168,9 @@ h2 {
 }
 
 #nodeSelector {
-	stroke: blue;
-	stroke-width: 0.5;
-	stroke-dasharray: 5, 5;
-	fill: rgba(50, 50, 255, 0.25);
+	position: absolute;
+	border: 0.5px dashed blue;
+	background-color: rgba(50, 50, 255, 0.25);
 }
 
 g.nv-force-node circle {

@@ -8,8 +8,8 @@ function createNodeChart() {
 			.charge(-80)
 			.friction(0.8)
 			.linkDist(60)
-			.width(chartWidth * 2.5)
-			.height(chartHeight * 2.5)
+			.width(chartWidth)
+			.height(chartHeight)
 			
 			
 			
@@ -57,12 +57,12 @@ function createNodeChart() {
 		});
 		
 		d3.select("svg")
-			.attr("style", "width: 250%; height: 250%")
+			.attr("style", "width: 300%; height: 300%")
 			.datum(data)
 			.call(nodeChart);
 			
-		svgContainer.scrollLeft = svgContainer.scrollWidth / 3.5;
-		svgContainer.scrollTop = svgContainer.scrollHeight / 3.5;
+		svgContainer.scrollLeft = chartWidth / 3;
+		svgContainer.scrollTop = chartHeight / 3;
 		
 		updateLoaderPosition();
 		nv.utils.windowResize(nodeChart.update);
@@ -131,8 +131,8 @@ function createBarChart() {
 }
 
 function updateSizes() {
-	chartWidth = svgContainer.clientWidth;
-	chartHeight = svgContainer.clientHeight;
+	chartWidth = svgContainer.clientWidth * 3;
+	chartHeight = svgContainer.clientHeight * 3;
 	selectionViewer[0].scrollTop = selectionViewer[0].scrollHeight - selectionViewer[0].clientHeight;
 }
 
@@ -147,6 +147,7 @@ function updatePage() {
 		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes, selection: JSON.stringify(showSelection)}, function(result) {
 			data = result;
 			d3.selectAll("svg > *, .nvtooltip").remove();
+			svg[0].currentScale = 1;
 			createNodeChart();
 			$("#loader").fadeOut();
 		});
@@ -158,6 +159,7 @@ function updatePage() {
 			if (err) throw err;
 			data = result;
 			d3.selectAll("svg > *, .nvtooltip").remove();
+			svg[0].currentScale = 1;
 			createBarChart();
 		});
 		break;

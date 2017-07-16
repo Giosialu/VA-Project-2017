@@ -52,7 +52,7 @@ function stopSVGMotion() {
 }
 
 //Variabili per la visualizzazione dei nodi
-var maxLinks = 5000;
+var maxLinks = 2500;
 var maxNodes = 250;
 
 $(document).ready(function() {
@@ -108,7 +108,8 @@ $(document).ready(function() {
 	
 	//Interazioni con l'SVG
 	selectionViewer = $("#selectionViewer");
-	svg = $("svg")
+	svg = $("svg");
+	$(svgContainer)
 	.on("contextmenu", function() {
 		return false;
 	})
@@ -142,9 +143,32 @@ $(document).ready(function() {
 		else if (ev.button == 2)
 			stopSVGMotion();
 	})
-	.on("mouseleave", function() {
+	.on("mouseleave", function(ev) {
 		stopNodeSelection();
 		if (moving)	stopSVGMotion();
+	});
+	svgContainer.addEventListener("wheel", function(ev) {
+		
+		if (chart != "node")
+			return;
+		ev.preventDefault();
+		
+		//Zoom
+		var startPos = circles[0].getBoundingClientRect();
+		svg[0].currentScale += -ev.deltaY / 2000;
+		if (svg[0].currentScale < 0.5)
+			svg[0].currentScale = 0.5;
+		if (svg[0].currentScale > 2.5)
+			svg[0].currentScale = 2.5;
+		var endPos = circles[0].getBoundingClientRect();
+		
+		//Adattamento dei riquadri
+		svgContainer.scrollLeft += (endPos.left - startPos.left);
+		svgContainer.scrollTop += (endPos.top - startPos.top);
+		var k = (svg[0].currentScale >= 1) ? svg[0].currentScale : (2 - svg[0].currentScale) * 2;
+		var n = 300 * k;
+		svg.attr("style", "width: " + n + "%; height: " + n + "%;");
+		updateLoaderPosition();
 	});
 	
 	updatePage();

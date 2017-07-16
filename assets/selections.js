@@ -23,40 +23,41 @@ function removeNode(node, index) {
 function startNodeSelection(ev) {
 	
 	svg.css("cursor", "default");
-			
+
 	//Click su nodo
-	for (var i = 0; i < circles.length; i++) {
-		var circCoords = circles[i].getBoundingClientRect();
-		if (ev.clientX > circCoords.left && ev.clientX < circCoords.right && ev.clientY > circCoords.top && ev.clientY < circCoords.bottom) {
-			if (ev.ctrlKey) {
-				var k = 0;
-				while (k < selection.length && selection[k].id != circles[i].__data__.id) {
-					k++;
-				}
-				if (k == selection.length)
-					addNode(circles[i]);
-				else
-					removeNode(circles[i], k);
+	if (ev.target.nodeName == "circle") {
+		if (ev.ctrlKey) {
+			var k = 0;
+			while (k < selection.length && selection[k].id != ev.target.__data__.id) {
+				k++;
 			}
-			else {
-				selection = [];
-				circles.not(circles[i]).css({
-					stroke: "rgba(50, 50, 50, 0.5)",
-					strokeWidth: "1"
-				});
-				addNode(circles[i]);
-			}
-			return;
+			if (k == selection.length)
+				addNode(ev.target);
+			else
+				removeNode(ev.target, k);
 		}
+		else {
+			selection = [];
+			circles.not(ev.target).css({
+				stroke: "rgba(50, 50, 50, 0.5)",
+				strokeWidth: "1"
+			});
+			addNode(ev.target);
+		}
+		return;
 	}
-	
+		
 	//Selezione con area
 	ctrl = ev.ctrlKey;
 	if (!ctrl) {
 		selection = [];
 		updateSelectionViewer();
 	}
-	selector = d3.select("svg").append("rect").attr("id", "nodeSelector").attr("x", ev.offsetX).attr("y", ev.offsetY);
+	selector = $(document.createElement("div")).attr("id", "nodeSelector").css({
+		left: ev.offsetX + "px",
+		top: ev.offsetY + "px"
+	});
+	$(svgContainer).append(selector);
 	selecting = requestAnimationFrame(function() {
 		return nodeSelection(ev.offsetX, ev.offsetY, ev.clientX, ev.clientY);
 	});
@@ -69,17 +70,20 @@ function nodeSelection(originX, originY, startX, startY) {
 	var width = mouseX - startX;
 	var height = mouseY - startY;
 	if (width < 0) {
-		selector.attr("x", originX + width);
+		selector.css("left", originX + width);
 		width = Math.abs(width);
 	}
 	if (height < 0) {
-		selector.attr("y", originY + height);
+		selector.css("top", originY + height);
 		height = Math.abs(height);
 	}
-	selector.attr("width", width).attr("height", height);
+	selector.css({
+		width: width + "px",
+		height: height + "px"
+	});
 	
 	//Selezione	
-	var rectCoords = selector[0][0].getBoundingClientRect();
+	var rectCoords = selector[0].getBoundingClientRect();
 	for (var i = 0; i < circles.length; i++) {
 		
 		var circCoords = circles[i].getBoundingClientRect();

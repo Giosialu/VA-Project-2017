@@ -215,13 +215,13 @@ var server = app.listen(8080, function(err) {
 		}
 		
 		//Definizione degli indici non filtrabili
-		var requiredIdsIndexes = [];
+		var requiredIndexes = [];
 		for (var i = 0; i < requiredIds.length; i++) {
 			var j = 0;
 			while (j < data.nodes.length && data.nodes[j].id != requiredIds[i]) {
 				j++
 			}
-			requiredIdsIndexes.push(j);
+			requiredIndexes.push(j);
 		}
 		
 		//Filtraggio dei nodi
@@ -256,42 +256,44 @@ var server = app.listen(8080, function(err) {
 			}
 			var arkStartTime = new Date();
 			sortedLinks.sort(function(a, b) {
-				if (requiredIdsIndexes.indexOf(a.target) != -1 && requiredIdsIndexes.indexOf(a.source) != -1)
-					return -1;
-				if (requiredIdsIndexes.indexOf(b.target) != -1 && requiredIdsIndexes.indexOf(b.source) != -1)
-					return 1;
-				if (requiredIdsIndexes.indexOf(a.target) != -1 || requiredIdsIndexes.indexOf(a.source) != -1)
-					return -1;
-				if (requiredIdsIndexes.indexOf(b.target) != -1 || requiredIdsIndexes.indexOf(b.source) != -1)
-					return 1;
-				return (b.value) - (a.value);
+				var importanceA = 1;
+				var importanceB = 1;
+				if (requiredIndexes.indexOf(a.source) != -1)
+					importanceA *= 10;
+				if (requiredIndexes.indexOf(a.target) != -1)
+					importanceA *= 10;
+				if (requiredIndexes.indexOf(b.source) != -1)
+					importanceB *= 10;
+				if (requiredIndexes.indexOf(b.target) != -1)
+					importanceB *= 10;
+				return (b.value * importanceB) - (a.value * importanceA);
 			});
 			var arkEndTime = new Date();
 			
-			var filteredLinks = [];
-			for (var i = 0; i < sortedLinks.length && filteredLinks.length < req.query.maxLinks; i++) {
-				var arco = sortedLinks[i];
-				var fromId = data.nodes[arco.source].id;
-				var fromIndex = 0;
-				while (fromIndex < filteredNodes.length && filteredNodes[fromIndex].id != fromId) {
-					fromIndex++;
-				}
-				var toId = data.nodes[arco.target].id;
-				var toIndex = 0;
-				while (toIndex < filteredNodes.length && filteredNodes[toIndex].id != toId) {
-					toIndex++;
-				}
-				if (fromIndex == filteredNodes.length || toIndex == filteredNodes.length)
-					continue;
-				arco.source = fromIndex;
-				arco.target = toIndex;
-				filteredLinks.push(arco);
-			}
-			
 		}
-		else
-			filteredLinks = data.links;
-		
+		else 
+			var sortedLinks = data.links;
+			
+		var filteredLinks = [];
+		for (var i = 0; i < sortedLinks.length && filteredLinks.length < req.query.maxLinks; i++) {
+			var arco = sortedLinks[i];
+			var fromId = data.nodes[arco.source].id;
+			var fromIndex = 0;
+			while (fromIndex < filteredNodes.length && filteredNodes[fromIndex].id != fromId) {
+				fromIndex++;
+			}
+			var toId = data.nodes[arco.target].id;
+			var toIndex = 0;
+			while (toIndex < filteredNodes.length && filteredNodes[toIndex].id != toId) {
+				toIndex++;
+			}
+			if (fromIndex == filteredNodes.length || toIndex == filteredNodes.length)
+				continue;
+			arco.source = fromIndex;
+			arco.target = toIndex;
+			filteredLinks.push(arco);
+		}
+					
 		//Operazioni finali
 		data.nodes = filteredNodes;
 		data.links = filteredLinks;
@@ -303,7 +305,9 @@ var server = app.listen(8080, function(err) {
 		
 		console.log("Data processed for " + data.nodes.length + " nodes and " + data.links.length + " links.");
 		var endTime = new Date();
-		console.log("Processing required " + (endTime.getTime() - startTime.getTime()) / 1000 + " seconds (" + (arkEndTime.getTime() - arkStartTime.getTime()) / 1000 + " for links sorting).");
+		console.log("Processing required " + (endTime.getTime() - startTime.getTime()) / 1000 + " seconds.")
+		if (typeof(arkEndTime) != "undefined")
+			console.log("(" + (arkEndTime.getTime() - arkStartTime.getTime()) / 1000 + " for links sorting)");
 		
 		sendData(data, res);
 		
