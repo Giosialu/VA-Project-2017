@@ -55,6 +55,15 @@ function stopSVGMotion() {
 var maxLinks = 2500;
 var maxNodes = 250;
 
+//Variabili per il socket
+var socket = io();
+socket.on("message", function(message) {
+	if (message.subject == "loadingData") {
+		$("#loadingMessage").text(message.text);
+		$("#loadingBar").css("width", message.percentage + "%");
+	}
+});
+
 $(document).ready(function() {
 	
 	//Pulsanti dei menù di navigazione
@@ -66,12 +75,43 @@ $(document).ready(function() {
 			$(this).addClass("active");
 			$(group.not(this)).removeClass("active");
 			window[variable] = this.dataset[variable];
+			
+			if (variable == "chart") {
+				if (this.dataset[variable] == "node")
+					$("#nodeOptions").slideDown("fast");
+				else
+					$("#nodeOptions").slideUp("fast");
+			}
+				
 			updatePage();
 		});
 	}
 	
 	setNavEvents("[data-day]", "day");
 	setNavEvents("[data-chart]", "chart");
+	
+	//Pulsanti per l'interfaccia del nodeChart
+	function updateNodeOptions(obj, variable) {
+		window[variable] = parseInt(obj.value);
+		obj.nextElementSibling.innerHTML = window[variable];
+	}
+	
+	function updateNodeChart() {
+		$.get("updateNodeChart", {maxLinks: maxLinks, maxNodes: maxNodes}, function(result) {
+			data = result;
+			d3.selectAll("svg > *, .nvtooltip").remove();
+			svg[0].currentScale = 1;
+			createNodeChart();
+		});
+	}
+	
+	$("#maxNodes").on("input", function() {
+		return updateNodeOptions(this, "maxNodes");
+	});
+	$("#maxLinks").on("input", function() {
+		return updateNodeOptions(this, "maxLinks");
+	});
+	$("#maxNodes, #maxLinks").on("change", updateNodeChart);
 	
 	//Pulsanti per l'invio della selezione
 	function sendSelection(chartString) {
@@ -81,6 +121,10 @@ $(document).ready(function() {
 		$(".nav-pills li").removeClass("active");
 		$("li[data-chart='" + chartString + "']").addClass("active");
 		chart = chartString;
+		if (chartString == "node")
+			$("#nodeOptions").slideDown("fast");
+		else 
+			$("#nodeOptions").slideUp("fast");
 		updatePage();
 	}
 	

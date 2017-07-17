@@ -6,6 +6,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
 		<script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+		<script src="node_modules/socket.io-client/dist/socket.io.slim.js"></script>
 		<script src="node_modules/d3/d3.min.js"></script>
 		<script src="node_modules/nvd3/build/nv.d3.min.js"></script>
 		<script src="assets/script.js"></script>
@@ -22,7 +23,17 @@
 				<h2>Views</h2>
 				<nav>
 					<ol class="nav nav-pills nav-stacked">
-						<li data-chart="node" class="active"><a><span class="icon nodeIcon"></span>Nodes</a></li>
+						<li data-chart="node" class="active"><a><span class="icon nodeIcon"></span>Nodes</a>
+							<form id="nodeOptions">
+								<label for="maxNodes">Maximum number of nodes:</label>
+								<input id="maxNodes" type="range" min="100" max="500" value="250" />
+								<span class="formValue">250</span>
+								<hr />
+								<label for="maxLinks">Maximum number of links:</label>
+								<input id="maxLinks" type="range" min="1000" max="5000" value="2500" />
+								<span class="formValue">2500</span>
+							</form>					
+						</li>
 						<li data-chart="bar"><a><span class="icon barIcon"></span>Areas</a></li>
 						<li data-chart="pattern"><a><span class="icon patternIcon"></span>Patterns</a></li>
 					</ol>
@@ -43,7 +54,9 @@
 					<svg>SVG is not supported in your browser.</svg>
 					<div id="loader">
 						<h3>Loading...</h3>
-						<div class="progress-bar progress-bar-striped active"></div>
+						<div class="progress">
+							<div id="loadingBar" class="progress-bar progress-bar-striped active"><span id="loadingMessage">Loading...</span></div>
+						</div>
 					</div>
 				</div>
 			</div>

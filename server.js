@@ -7,15 +7,24 @@ app.use(express.static(__dirname));
 
 var conn;
 
+//Variabili nel processing
 var dayNames = {
 	"6": "Friday",
 	"7": "Saturday",
 	"8": "Sunday"
 };
+var lastLoadedData;
+var lastSortedNodes;
+var lastSortedLinks;
 
 var server = app.listen(8080, function(err) {
 	if (err) throw err;
 	console.log("The server is listening on :8080.");
+	
+	var io = require("socket.io")(server);
+	io.on("connection", function() {
+		console.log("Socket activated.");
+	});
 	
 	
 	
@@ -42,6 +51,15 @@ var server = app.listen(8080, function(err) {
 	
 			/* FUNZIONI PER LO SCAMBIO DEI DATI */
 	
+	//Dati sul caricamento
+	function sendLoadingData(text, percentage) {
+		io.send({
+			subject: "loadingData",
+			text: text,
+			percentage: percentage
+		});
+	}
+	
 	//Extract data from database and convert in forceDirectedGraph data notation
 	function extractNodeData(req, res) {
 		var selection = JSON.parse(req.query.selection.toString());
@@ -58,7 +76,8 @@ var server = app.listen(8080, function(err) {
 		if (i == selection.length) {
 			result = JSON.parse(fs.readFileSync("assets/data/nodeData" + req.query.day + ".json").toString())
 			console.log("Loaded data file, selecting data...");	
-				
+			sendLoadingData("Selecting data...", 50);
+			
 			var data = {
 				nodes: [],
 				links: []
@@ -105,6 +124,7 @@ var server = app.listen(8080, function(err) {
 				}
 			}
 			
+			sendLoadingData("Processing data...", 75);
 			processNodeData(data, req, res, selection);
 			return;
 			
@@ -172,6 +192,7 @@ var server = app.listen(8080, function(err) {
 		conn.query(sql, function(err, result) {
 			if (err) throw err;
 			console.log("The query successfully returned " + result.length + " rows.");
+			sendLoadingData("Selecting data...", 50);
 			
 			//Processing dei dati
 			for (var i = 0; i < result.length; i++) {
@@ -197,6 +218,7 @@ var server = app.listen(8080, function(err) {
 
 			}
 			
+			sendLoadingData("Processing data...", 75);
 			processNodeData(nodeData, req, res, selection);
 			
 		});
@@ -205,6 +227,7 @@ var server = app.listen(8080, function(err) {
 	//Process node graph data to send only a viewable number of nodes and links
 	function processNodeData(data, req, res, selection = []) {
 		console.log("Received " + data.nodes.length + " nodes and " + data.links.length + " links. Processing...");
+		lastLoadedData = JSON.stringify(data);
 		var startTime = new Date();
 				
 		//Definizione presenza ID non filtrabili
@@ -238,6 +261,7 @@ var server = app.listen(8080, function(err) {
 					return 1;
 				return (b.inValue + b.outValue) - (a.inValue + a.outValue);
 			});
+			lastSortedNodes = JSON.stringify(sortedNodes);
 			var filteredNodes = [];
 			for (var i = 0; i < sortedNodes.length && i < req.query.maxNodes; i++) {
 				filteredNodes.push(sortedNodes[i]);
@@ -273,7 +297,9 @@ var server = app.listen(8080, function(err) {
 		}
 		else 
 			var sortedLinks = data.links;
-			
+		
+		lastSortedLinks = JSON.stringify(sortedLinks);
+		
 		var filteredLinks = [];
 		for (var i = 0; i < sortedLinks.length && filteredLinks.length < req.query.maxLinks; i++) {
 			var arco = sortedLinks[i];
@@ -298,17 +324,13 @@ var server = app.listen(8080, function(err) {
 		data.nodes = filteredNodes;
 		data.links = filteredLinks;
 		
-		//Riduzione del valore degli archi per una migliore rappresentazione
-		for (var i = 0; i < data.links.length; i++) {
-			data.links[i].value /= 100;
-		}
-		
 		console.log("Data processed for " + data.nodes.length + " nodes and " + data.links.length + " links.");
 		var endTime = new Date();
 		console.log("Processing required " + (endTime.getTime() - startTime.getTime()) / 1000 + " seconds.")
 		if (typeof(arkEndTime) != "undefined")
 			console.log("(" + (arkEndTime.getTime() - arkStartTime.getTime()) / 1000 + " for links sorting)");
 		
+		sendLoadingData("Receiving data...", 100);
 		sendData(data, res);
 		
 	}
@@ -328,15 +350,55 @@ var server = app.listen(8080, function(err) {
 		
 		//Da una selezione
 		if (req.query.selection != "[]") {
+			sendLoadingData("Loading data...", 25);
 			extractNodeData(req, res);
 			return;
 		}
 		
 		//Su un'intera giornata
+		sendLoadingData("Loading data...", 33);
 		fs.readFile("assets/data/nodeData" + req.query.day + ".json", function(err, result) {
 			if (err) throw err;
+			sendLoadingData("Processing data...", 66);
 			processNodeData(JSON.parse(result.toString()), req, res);
 		});
+	});
+	
+	app.get("/updateNodeChart", function(req, res) {
+		var data = JSON.parse(lastLoadedData);
+		var sortedNodes = JSON.parse(lastSortedNodes);
+		var sortedLinks = JSON.parse(lastSortedLinks);
+
+		var filteredNodes = [];
+		for (var i = 0; i < sortedNodes.length && i < req.query.maxNodes; i++) {
+			filteredNodes.push(sortedNodes[i]);
+		}
+			
+		var filteredLinks = [];
+		for (var i = 0; i < sortedLinks.length && filteredLinks.length < req.query.maxLinks; i++) {
+			var arco = sortedLinks[i];
+			var fromId = data.nodes[arco.source].id;
+			var fromIndex = 0;
+			while (fromIndex < filteredNodes.length && filteredNodes[fromIndex].id != fromId) {
+				fromIndex++;
+			}
+			var toId = data.nodes[arco.target].id;
+			var toIndex = 0;
+			while (toIndex < filteredNodes.length && filteredNodes[toIndex].id != toId) {
+				toIndex++;
+			}
+			if (fromIndex == filteredNodes.length || toIndex == filteredNodes.length)
+				continue;
+			arco.source = fromIndex;
+			arco.target = toIndex;
+			filteredLinks.push(arco);
+		}
+					
+		data.nodes = filteredNodes;
+		data.links = filteredLinks;
+		
+		console.log("Node chart updated to " + data.nodes.length + " nodes and " + data.links.length + " links.");
+		sendData(data, res);
 	});
 		
 });

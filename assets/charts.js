@@ -50,6 +50,11 @@ function createNodeChart() {
 					});
 				
 
+			})
+			.linkExtras(function(links) {
+				links.attr("style", function(d) {
+					return "stroke-width: " + d.value / 50 + ";"
+				});
 			});
 		
 		nodeChart.tooltip.contentGenerator(function(d) {
@@ -143,6 +148,7 @@ function updatePage() {
 	switch (chart) {
 		
 		case "node":
+		$("#loadingBar").css("width", "0%");
 		$("#loader").fadeIn();
 		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes, selection: JSON.stringify(showSelection)}, function(result) {
 			data = result;
