@@ -16,6 +16,20 @@ main {
 h1 {
 	text-align: center;
 	margin-bottom: 16px;
+	cursor: default;
+}
+
+#infoOpener {
+	opacity: 0;
+	transition: opacity 0.1s;
+	cursor: pointer;
+	font-size: 0.8em;
+	position: relative;
+	bottom: 0.2em;
+}
+
+#info {
+	display: none;
 }
 
 h2 {

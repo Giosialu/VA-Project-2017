@@ -66,6 +66,14 @@ socket.on("message", function(message) {
 
 $(document).ready(function() {
 	
+	//Pulsante sulle informazioni
+	$("h1").on("mouseenter", function() {
+		$("#infoOpener").css("opacity", "1");
+	})
+	.on("mouseleave", function() {
+		$("#infoOpener").css("opacity", "0");
+	});
+	
 	//Pulsanti dei menù di navigazione
 	function setNavEvents(selector, variable) {
 		var group = $(selector);
