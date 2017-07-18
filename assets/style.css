@@ -85,7 +85,7 @@ h2 {
 form {
 	position: relative;
 	top: -2px;
-	padding: 14px 10px 6px;
+	padding: 12px 10px 6px;
 	border: 1px solid #ccc;
 	border-top: 0px;
 	border-radius: 0px 0px 15px 15px;
@@ -100,7 +100,7 @@ label {
 
 input[type="range"] {
 	height: 3px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 	display: inline-block;
 	width: calc(100% - 50px);;
 }
@@ -117,7 +117,16 @@ input[type="range"] {
 
 hr {
 	margin-top: 5px;
-	margin-bottom: 12px;
+	margin-bottom: 10px;
+}
+
+.updater[disabled], #loader {
+	cursor: wait !important;
+}
+
+.updater[disabled]:hover {
+	background-color: initial;
+	color: initial !important;
 }
 
 			/* Interfaccia per la selezione */
@@ -228,6 +237,7 @@ hr {
 g.nv-force-node circle {
 	stroke: rgba(50, 50, 50, 0.5);
 	stroke-width: 0.75px;
+	opacity: 0.9;
 }
 
 .nvtooltip {

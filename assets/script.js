@@ -20,6 +20,7 @@ var circles = [];
 var rects = [];
 var selection = [];
 var selectionViewer;
+var isLoading = false;
 
 var areaColors = {
 	"Tundra Land": "PowderBlue",//"rgb(219, 238, 244)",
@@ -28,6 +29,26 @@ var areaColors = {
 	"Wet Land": "DarkSeaGreen",//"rgb(196, 213, 159)",
 	"Coaster Alley": "Salmon" //"rgb(217, 149, 146)"
 };
+
+var dayNames = {
+	"6": "Friday",
+	"7": "Saturday",
+	"8": "Sunday"
+};
+
+function setOnLoading() {
+	isLoading = true;
+	$(".updater").each(function(i, d) {
+		d.setAttribute("disabled", "disabled");
+	});
+}
+
+function removeOnLoading() {
+	isLoading = false;
+	$(".updater").each(function(i, d) {
+		d.removeAttribute("disabled");
+	});
+}
 
 function updateLoaderPosition() {
 	$("#loader").css({
@@ -54,6 +75,9 @@ function stopSVGMotion() {
 //Variabili per la visualizzazione dei nodi
 var maxLinks = 2500;
 var maxNodes = 250;
+var linkSizeK = 50;
+var nodeSizeK = 1000;
+var userSizeK = 1;
 
 //Variabili per il socket
 var socket = io();
@@ -78,8 +102,12 @@ $(document).ready(function() {
 	function setNavEvents(selector, variable) {
 		var group = $(selector);
 		group.on("click", function(ev) {
+			
+			if (isLoading)
+				return;
 			if ($(this).hasClass("active"))
 				return;
+			
 			$(this).addClass("active");
 			$(group.not(this)).removeClass("active");
 			window[variable] = this.dataset[variable];
@@ -105,12 +133,28 @@ $(document).ready(function() {
 	}
 	
 	function updateNodeChart() {
+		if (isLoading)
+			return;
+		setOnLoading()
 		$.get("updateNodeChart", {maxLinks: maxLinks, maxNodes: maxNodes}, function(result) {
 			data = result;
 			d3.selectAll("svg > *, .nvtooltip").remove();
 			svg[0].currentScale = 1;
 			createNodeChart();
+			removeOnLoading();
 		});
+	}
+	
+	function updateNodeView(obj) {
+		userSizeK = Number(obj.value);
+		obj.nextElementSibling.innerHTML = userSizeK;
+		d3.selectAll("circle").attr("r", function(d) {
+			return (d.inValue + d.outValue) / nodeSizeK * userSizeK;
+		});
+		d3.selectAll("line").attr("style", function(d) {
+			return "stroke-width: " + d.value / linkSizeK * (Math.sqrt(userSizeK)) + ";"
+		});
+
 	}
 	
 	$("#maxNodes").on("input", function() {
@@ -120,10 +164,19 @@ $(document).ready(function() {
 		return updateNodeOptions(this, "maxLinks");
 	});
 	$("#maxNodes, #maxLinks").on("change", updateNodeChart);
-	
+	$("#size").on("input", function() {
+		return updateNodeView(this);
+	});
+		
 	//Pulsanti per l'invio della selezione
 	function sendSelection(chartString) {
+		
+		if (isLoading)
+			return;
+		
 		showSelection = selection;
+		
+		//Aspetto dell'interfaccia per ogni query
 		svgContainer.style.borderRadius = "0px 0px 4px 4px";
 		$("#selectionTab").fadeIn().addClass("active");
 		$(".nav-pills li").removeClass("active");
@@ -133,6 +186,41 @@ $(document).ready(function() {
 			$("#nodeOptions").slideDown("fast");
 		else 
 			$("#nodeOptions").slideUp("fast");
+		
+		//Aspetto dell'interfaccia per le query con aree
+		var i = 0;
+		while (i < selection.length && selection[i].area == undefined) {
+			i++;
+		}
+		if (i < selection.length) {
+			linkSizeK = 0;
+			nodeSizeK = 0;
+			for (var i = 0; i < selection.length; i++) {
+				if (selection[i].timestamp != undefined)
+					linkSizeK += 5;
+					nodeSizeK += 100;
+			}
+			$("[data-day]").removeClass("active").fadeOut();
+			var i = 0;
+			while (selection[i].timestamp == undefined) {
+				i++;
+			}
+			var n = selection[i].timestamp[9];
+			while (i < selection.length && (selection[i].timestamp == undefined || selection[i].timestamp[9] == n)) {
+				i++;
+			}
+			if (i == selection.length) {
+				day = dayNames[n];
+				$("[data-day='" + day + "']").addClass("active").fadeIn();
+			}
+		}
+		else {
+			linkSizeK = 50;
+			nodeSizeK = 1000;
+			$("[data-day]").removeClass("active").fadeIn();
+			$("[data-day='" + day + "']").addClass("active");
+		}
+		
 		updatePage();
 	}
 	
@@ -148,8 +236,14 @@ $(document).ready(function() {
 	
 	//Pulsante per la chiusura della selezione
 	$("#closeSelection").on("click", function() {
+		if (isLoading)
+			return;
 		showSelection = [];
 		svgContainer.style.borderRadius = "0px 4px 4px 4px";
+		linkSizeK = 50;
+		nodeSizeK = 1000;
+		$("[data-day]").removeClass("active").fadeIn();
+		$("[data-day='" + day + "']").addClass("active");
 		$("#selectionTab").fadeOut().removeClass("active");
 		updatePage();
 	});

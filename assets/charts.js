@@ -19,7 +19,7 @@ function createNodeChart() {
 					
 					//Raggio
 					.attr("r", function(d) {
-						return (d.inValue + d.outValue) / 1000;
+						return (d.inValue + d.outValue) / nodeSizeK * userSizeK;
 					})
 					//Stile
 					.attr("style", function(d) {
@@ -53,7 +53,7 @@ function createNodeChart() {
 			})
 			.linkExtras(function(links) {
 				links.attr("style", function(d) {
-					return "stroke-width: " + d.value / 50 + ";"
+					return "stroke-width: " + d.value / linkSizeK * (Math.sqrt(userSizeK)) + ";"
 				});
 			});
 		
@@ -142,7 +142,9 @@ function updateSizes() {
 }
 
 function updatePage() {
-
+	
+	setOnLoading();
+	
 	updateSizes();
 	
 	switch (chart) {
@@ -156,6 +158,7 @@ function updatePage() {
 			svg[0].currentScale = 1;
 			createNodeChart();
 			$("#loader").fadeOut();
+			removeOnLoading();
 		});
 		break;
 		
@@ -167,6 +170,7 @@ function updatePage() {
 			d3.selectAll("svg > *, .nvtooltip").remove();
 			svg[0].currentScale = 1;
 			createBarChart();
+			removeOnLoading();
 		});
 		break;
 		

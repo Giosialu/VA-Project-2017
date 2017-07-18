@@ -51,6 +51,10 @@ function startNodeSelection(ev) {
 	ctrl = ev.ctrlKey;
 	if (!ctrl) {
 		selection = [];
+		circles.css({
+			stroke: "rgba(50, 50, 50, 0.5)",
+			strokeWidth: "1"
+		});
 		updateSelectionViewer();
 	}
 	selector = $(document.createElement("div")).attr("id", "nodeSelector").css({
@@ -235,7 +239,7 @@ function updateSelectionViewer() {
 	//Token
 	var html = "";
 	for (var i = 0; i < selection.length; i++) {
-		if (typeof(selection[i].id) != "undefined")
+		if (selection[i].id != undefined)
 			html += "<span class='selectionLabel'>ID " + selection[i].id + "</span>";
 		else {
 			var startDate = new Date(selection[i].timestamp);

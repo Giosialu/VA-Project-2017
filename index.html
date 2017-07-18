@@ -23,30 +23,34 @@
 				<h2>Views</h2>
 				<nav>
 					<ol class="nav nav-pills nav-stacked">
-						<li data-chart="node" class="active"><a><span class="icon nodeIcon"></span>Nodes</a>
+						<li data-chart="node" class="active"><a class="updater"><span class="icon nodeIcon"></span>Nodes</a>
 							<form id="nodeOptions">
 								<label for="maxNodes">Maximum number of nodes:</label>
-								<input id="maxNodes" type="range" min="100" max="500" value="250" />
+								<input class="updater" id="maxNodes" type="range" min="100" max="500" value="250" />
 								<span class="formValue">250</span>
 								<hr />
 								<label for="maxLinks">Maximum number of links:</label>
-								<input id="maxLinks" type="range" min="1000" max="5000" value="2500" />
+								<input class="updater" id="maxLinks" type="range" min="1000" max="5000" value="2500" />
 								<span class="formValue">2500</span>
+								<hr />
+								<label for="nodeSize">Nodes and link size:</label>
+								<input id="size" type="range" min="0.1" max="3" step="0.1" value="1" />
+								<span class="formValue">1</span>
 							</form>					
 						</li>
-						<li data-chart="bar"><a><span class="icon barIcon"></span>Areas</a></li>
-						<li data-chart="pattern"><a><span class="icon patternIcon"></span>Patterns</a></li>
+						<li data-chart="bar"><a class="updater"><span class="icon barIcon"></span>Areas</a></li>
+						<li data-chart="pattern"><a class="updater"><span class="icon patternIcon"></span>Patterns</a></li>
 					</ol>
 				</nav>
 			</div>
 			<div class="col-md-8">
 				<nav>
 					<ol class="nav nav-tabs">
-						<li data-day="Friday" class="active"><a>Friday</a></li>
-						<li data-day="Saturday"><a>Saturday</a></li>
-						<li data-day="Sunday"><a>Sunday</a></li>
+						<li data-day="Friday" class="active"><a class="updater">Friday</a></li>
+						<li data-day="Saturday"><a class="updater">Saturday</a></li>
+						<li data-day="Sunday"><a class="updater">Sunday</a></li>
 						<li id="selectionTab">
-							<a>Customized<button id="closeSelection" class="close" aria-label="close selection view">&times;</button></a>
+							<a>Customized<button id="closeSelection" class="updater close" aria-label="close selection view">&times;</button></a>
 						</li>
 					</ol>
 				</nav>
@@ -64,9 +68,9 @@
 				<header>
 					<h2>Selection</h2>
 					<div id="buttonsContainer">
-						<button id="sendToNodes" class="btn btn-default"><span class="icon nodeIcon"></span>Send</button>
-						<button id="sendToBars" class="btn btn-default"><span class="icon barIcon"></span>Send</button>
-						<button id="sendToPatterns" class="btn btn-default"><span class="icon patternIcon"></span>Send</button>
+						<button id="sendToNodes" class="updater btn btn-default"><span class="icon nodeIcon"></span>Send</button>
+						<button id="sendToBars" class="updater btn btn-default"><span class="icon barIcon"></span>Send</button>
+						<button id="sendToPatterns" class="updater btn btn-default"><span class="icon patternIcon"></span>Send</button>
 					</div>
 				</header>
 				<div id="selectionViewer"></div>

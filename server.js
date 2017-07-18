@@ -5,17 +5,9 @@ var fs = require("fs");
 
 app.use(express.static(__dirname));
 
-var conn;
 
-//Variabili nel processing
-var dayNames = {
-	"6": "Friday",
-	"7": "Saturday",
-	"8": "Sunday"
-};
-var lastLoadedData;
-var lastSortedNodes;
-var lastSortedLinks;
+
+			/* FONDAMENTI DELLA CONNESSIONE */
 
 var server = app.listen(8080, function(err) {
 	if (err) throw err;
@@ -25,12 +17,8 @@ var server = app.listen(8080, function(err) {
 	io.on("connection", function() {
 		console.log("Socket activated.");
 	});
-	
-	
-	
-			/* FONDAMENTI DELLA CONNESSIONE */
-	
-	conn = mysql.createConnection({
+
+	var conn = mysql.createConnection({
 		host: "localhost",
 		user: "root",
 		password: "myPassword123",
@@ -49,7 +37,17 @@ var server = app.listen(8080, function(err) {
 	
 	
 	
-			/* FUNZIONI PER LO SCAMBIO DEI DATI */
+			/* VARIABILI E FUNZIONI PER LO SCAMBIO DEI DATI */
+	
+	//Variabili 
+	var dayNames = {
+		"6": "Friday",
+		"7": "Saturday",
+		"8": "Sunday"
+	};
+	var lastLoadedData;
+	var lastSortedNodes;
+	var lastSortedLinks;
 	
 	//Dati sul caricamento
 	function sendLoadingData(text, percentage) {
@@ -60,13 +58,24 @@ var server = app.listen(8080, function(err) {
 		});
 	}
 	
+	//Creazione della stringa da inserire nella query SQL in caso di ID ed aree
+	function createINString(ids) {
+		var str = "";
+		for (var i = 0; i < ids.length; i++) {
+			str += "'" + ids[i] + "'";
+			if (i < ids.length - 1)
+				str += ", ";
+		}
+		return str;
+	}
+	
 	//Extract data from database and convert in forceDirectedGraph data notation
 	function extractNodeData(req, res) {
 		var selection = JSON.parse(req.query.selection.toString());
 		
 		//Definizione di necessità di query al DB
 		var i = 0;
-		while (i < selection.length && typeof(selection[i].area) == "undefined") {
+		while (i < selection.length && selection[i].area == undefined) {
 			i++;
 		}
 		
@@ -75,7 +84,7 @@ var server = app.listen(8080, function(err) {
 		
 		if (i == selection.length) {
 			result = JSON.parse(fs.readFileSync("assets/data/nodeData" + req.query.day + ".json").toString())
-			console.log("Loaded data file, selecting data...");	
+			console.log("Loaded " + result.nodes.length + " nodes and " + result.links.length + " links, now selecting data...");	
 			sendLoadingData("Selecting data...", 50);
 			
 			var data = {
@@ -84,7 +93,7 @@ var server = app.listen(8080, function(err) {
 			};
 			
 			//Definire gli ID coinvolti nelle comunicazioni degli ID selezionati
-			var involvedIds = [];
+			var involvedIndexes = [];
 			for (var i = 0; i < result.links.length; i++) {
 				var arco = result.links[i];
 				var j = 0;
@@ -92,17 +101,17 @@ var server = app.listen(8080, function(err) {
 					j++;					
 				}
 				if (j < selection.length) {
-					if (involvedIds.indexOf(arco.source) == -1)
-						involvedIds.push(arco.source);
-					if (involvedIds.indexOf(arco.target) == -1)
-						involvedIds.push(arco.target);
+					if (involvedIndexes.indexOf(arco.source) == -1)
+						involvedIndexes.push(arco.source);
+					if (involvedIndexes.indexOf(arco.target) == -1)
+						involvedIndexes.push(arco.target);
 				}
 			}
 			
 			//Inserire tra i dati tutti quelli che comprendono i nodi coinvolti
 			for (var i = 0; i < result.links.length; i++) {
 				var arco = result.links[i];
-				if (involvedIds.indexOf(arco.source) != -1 && involvedIds.indexOf(arco.target) != -1) {
+				if (involvedIndexes.indexOf(arco.source) != -1 && involvedIndexes.indexOf(arco.target) != -1) {
 					data.nodes[arco.source] = result.nodes[arco.source];
 					data.nodes[arco.target] = result.nodes[arco.target];
 					data.links.push(arco);
@@ -110,19 +119,23 @@ var server = app.listen(8080, function(err) {
 			}
 			
 			//Eliminare i nodi vuoti
+			var nodes = [];
+			var k = 0;
 			for (var i = 0; i < data.nodes.length; i++) {
-				if (data.nodes[i] == undefined) {
-					data.nodes.splice(i, 1);
+				if (data.nodes[i] != undefined)
+					nodes.push(data.nodes[i]);
+				else {
 					for (var j = 0; j < data.links.length; j++) {
 						var arco = data.links[j];
-						if (arco.source > i)
+						if (arco.source > i - k)
 							arco.source--;
-						if (arco.target > i)
+						if (arco.target > i - k)
 							arco.target--;
 					}
-					i--;
+					k++;
 				}
 			}
+			data.nodes = nodes;
 			
 			sendLoadingData("Processing data...", 75);
 			processNodeData(data, req, res, selection);
@@ -152,7 +165,7 @@ var server = app.listen(8080, function(err) {
 		
 		var addedCondition = "";
 		if (ids.length > 0)
-			addedCondition = " && fromID IN (" + ids.toString() + ") && toID IN (" + ids.toString() + ")";
+			addedCondition = " && (fromID IN (" + createINString(ids) + ") || toID IN (" + createINString(ids) + "))";
 		
 		var sql = "";
 		
@@ -160,7 +173,7 @@ var server = app.listen(8080, function(err) {
 			sql += queries[i];
 			sql += addedCondition;
 			if (i < queries.length - 1)
-				sql += " UNION ";
+				sql += " UNION ALL ";
 			else
 				sql += ";";
 		}
@@ -247,9 +260,8 @@ var server = app.listen(8080, function(err) {
 			requiredIndexes.push(j);
 		}
 		
-		//Filtraggio dei nodi
+		//Ordinamento dei nodi
 		if (data.nodes.length > req.query.maxNodes) {
-			
 			var sortedNodes = [];
 			for (var i = 0; i < data.nodes.length; i++) {
 				sortedNodes.push(data.nodes[i]);
@@ -260,25 +272,18 @@ var server = app.listen(8080, function(err) {
 				if (requiredIds.indexOf(b.id) != -1)
 					return 1;
 				return (b.inValue + b.outValue) - (a.inValue + a.outValue);
-			});
-			lastSortedNodes = JSON.stringify(sortedNodes);
-			var filteredNodes = [];
-			for (var i = 0; i < sortedNodes.length && i < req.query.maxNodes; i++) {
-				filteredNodes.push(sortedNodes[i]);
-			}
-			
+			});			
 		}
 		else
-			filteredNodes = data.nodes;
+			var sortedNodes = data.nodes;		
+		lastSortedNodes = JSON.stringify(sortedNodes);
 		
-		//Filtraggio degli archi
+		//Ordinamento degli archi
 		if (data.links.length > req.query.maxLinks) {
-			
-			var sortedLinks = [];
+				var sortedLinks = [];
 			for (var i = 0; i < data.links.length; i++) {
 				sortedLinks.push(data.links[i]);
 			}
-			var arkStartTime = new Date();
 			sortedLinks.sort(function(a, b) {
 				var importanceA = 1;
 				var importanceB = 1;
@@ -291,15 +296,29 @@ var server = app.listen(8080, function(err) {
 				if (requiredIndexes.indexOf(b.target) != -1)
 					importanceB *= 10;
 				return (b.value * importanceB) - (a.value * importanceA);
-			});
-			var arkEndTime = new Date();
-			
+			});	
 		}
 		else 
 			var sortedLinks = data.links;
-		
 		lastSortedLinks = JSON.stringify(sortedLinks);
 		
+		filterNodeData(data, sortedNodes, sortedLinks, req, res);
+		
+	}
+	
+	function filterNodeData(data, sortedNodes, sortedLinks, req, res) {
+		
+		//Filtraggio dei nodi
+		if (sortedNodes.length > req.query.maxNodes) {
+			var filteredNodes = [];
+			for (var i = 0; i < sortedNodes.length && i < req.query.maxNodes; i++) {
+				filteredNodes.push(sortedNodes[i]);
+			}
+		}
+		else
+			filteredNodes = sortedNodes;
+		
+		//Filtraggio degli archi
 		var filteredLinks = [];
 		for (var i = 0; i < sortedLinks.length && filteredLinks.length < req.query.maxLinks; i++) {
 			var arco = sortedLinks[i];
@@ -326,9 +345,8 @@ var server = app.listen(8080, function(err) {
 		
 		console.log("Data processed for " + data.nodes.length + " nodes and " + data.links.length + " links.");
 		var endTime = new Date();
-		console.log("Processing required " + (endTime.getTime() - startTime.getTime()) / 1000 + " seconds.")
-		if (typeof(arkEndTime) != "undefined")
-			console.log("(" + (arkEndTime.getTime() - arkStartTime.getTime()) / 1000 + " for links sorting)");
+		if (typeof(startTime) != "undefined")
+			console.log("Processing required " + (endTime.getTime() - startTime.getTime()) / 1000 + " seconds.")
 		
 		sendLoadingData("Receiving data...", 100);
 		sendData(data, res);
@@ -365,40 +383,7 @@ var server = app.listen(8080, function(err) {
 	});
 	
 	app.get("/updateNodeChart", function(req, res) {
-		var data = JSON.parse(lastLoadedData);
-		var sortedNodes = JSON.parse(lastSortedNodes);
-		var sortedLinks = JSON.parse(lastSortedLinks);
-
-		var filteredNodes = [];
-		for (var i = 0; i < sortedNodes.length && i < req.query.maxNodes; i++) {
-			filteredNodes.push(sortedNodes[i]);
-		}
-			
-		var filteredLinks = [];
-		for (var i = 0; i < sortedLinks.length && filteredLinks.length < req.query.maxLinks; i++) {
-			var arco = sortedLinks[i];
-			var fromId = data.nodes[arco.source].id;
-			var fromIndex = 0;
-			while (fromIndex < filteredNodes.length && filteredNodes[fromIndex].id != fromId) {
-				fromIndex++;
-			}
-			var toId = data.nodes[arco.target].id;
-			var toIndex = 0;
-			while (toIndex < filteredNodes.length && filteredNodes[toIndex].id != toId) {
-				toIndex++;
-			}
-			if (fromIndex == filteredNodes.length || toIndex == filteredNodes.length)
-				continue;
-			arco.source = fromIndex;
-			arco.target = toIndex;
-			filteredLinks.push(arco);
-		}
-					
-		data.nodes = filteredNodes;
-		data.links = filteredLinks;
-		
-		console.log("Node chart updated to " + data.nodes.length + " nodes and " + data.links.length + " links.");
-		sendData(data, res);
+		filterNodeData(JSON.parse(lastLoadedData), JSON.parse(lastSortedNodes), JSON.parse(lastSortedLinks), req, res);
 	});
 		
 });
