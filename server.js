@@ -73,16 +73,9 @@ var server = app.listen(8080, function(err) {
 	function extractNodeData(req, res) {
 		var selection = JSON.parse(req.query.selection.toString());
 		
-		//Definizione di necessità di query al DB
-		var i = 0;
-		while (i < selection.length && selection[i].area == undefined) {
-			i++;
-		}
-		
-		
 		/* CASO DI SOLI ID */
 		
-		if (i == selection.length) {
+		if (req.query.selectionHasArea == "false") {
 			result = JSON.parse(fs.readFileSync("assets/data/nodeData" + req.query.day + ".json").toString())
 			console.log("Loaded " + result.nodes.length + " nodes and " + result.links.length + " links, now selecting data...");	
 			sendLoadingData("Selecting data...", 50);

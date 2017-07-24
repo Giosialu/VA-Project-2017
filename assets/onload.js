@@ -1,96 +1,19 @@
-//Variabili principali
-var day = "Friday";
-var chart = "node";
-var data;
-var showSelection = [];
-
-//Variabili per la dimensione dell'SVG
-var svgContainer;
-var chartWidth;
-var chartHeight;
-
-//Variabili per l'interazione con l'SVG
-var mouseX;
-var mouseY;
-var ctrl;
-var moving = false;
-var selecting = false;
-var selector;
-var circles = [];
-var rects = [];
-var selection = [];
-var selectionViewer;
-var isLoading = false;
-
-var areaColors = {
-	"Tundra Land": "PowderBlue",//"rgb(219, 238, 244)",
-	"Entry Corridor": "Gainsboro",//"rgb(237, 234, 241)",
-	"Kiddie Land": "PapayaWhip",//"rgb(255, 243, 203)",
-	"Wet Land": "DarkSeaGreen",//"rgb(196, 213, 159)",
-	"Coaster Alley": "Salmon" //"rgb(217, 149, 146)"
-};
-
-var dayNames = {
-	"6": "Friday",
-	"7": "Saturday",
-	"8": "Sunday"
-};
-
-function setOnLoading() {
-	isLoading = true;
-	$(".updater").each(function(i, d) {
-		d.setAttribute("disabled", "disabled");
-	});
-}
-
-function removeOnLoading() {
-	isLoading = false;
-	$(".updater").each(function(i, d) {
-		d.removeAttribute("disabled");
-	});
-}
-
-function updateLoaderPosition() {
-	$("#loader").css({
-		top: svgContainer.scrollTop + "px",
-		left: svgContainer.scrollLeft + "px"
-	});
-}
-
-function moveSVG(startLeft, startTop, startX, startY) {
-	svgContainer.scrollLeft = startLeft - (mouseX - startX);
-	svgContainer.scrollTop = startTop - (mouseY - startY);
-	updateLoaderPosition();
-	moving = requestAnimationFrame(function() {
-		return moveSVG(startLeft, startTop, startX, startY);
-	});
-}
-
-function stopSVGMotion() {
-	cancelAnimationFrame(moving);
-	moving = false;
-	svg.css("cursor", "default");
-}
-
-//Variabili per la visualizzazione dei nodi
-var maxLinks = 2500;
-var maxNodes = 250;
-var linkSizeK = 50;
-var nodeSizeK = 1000;
-var userSizeK = 1;
-
-//Variabili per il socket
-var socket = io();
-socket.on("message", function(message) {
-	if (message.subject == "loadingData") {
-		$("#loadingMessage").text(message.text);
-		$("#loadingBar").css("width", message.percentage + "%");
-	}
-});
-
 $(document).ready(function() {
 	
-	//Pulsante sulle informazioni
+	//Nodi HTML ed eventi generici
+	svgContainer = document.getElementById("svgContainer");
+	selectionViewer = document.getElementById("selectionViewer");
+	reselectButton = document.getElementById("reselect");
+	reselectContainer = $("#reselectContainer");
+	viewingInfo = $("#viewingInfo");
+	svg = $("svg");
+	$(window).on("resize", updateSizes);
+	
+	
+				/* PRINCIPALI PULSANTI DELL'INTERFACCIA */
+				
+				
+	//Informazioni sul sito
 	$("h1").on("mouseenter", function() {
 		$("#infoOpener").css("opacity", "1");
 	})
@@ -98,35 +21,74 @@ $(document).ready(function() {
 		$("#infoOpener").css("opacity", "0");
 	});
 	
-	//Pulsanti dei men√π di navigazione
+	//Scelta del giorno e del grafico
 	function setNavEvents(selector, variable) {
 		var group = $(selector);
 		group.on("click", function(ev) {
-			
 			if (isLoading)
 				return;
 			if ($(this).hasClass("active"))
 				return;
-			
 			$(this).addClass("active");
 			$(group.not(this)).removeClass("active");
-			window[variable] = this.dataset[variable];
-			
-			if (variable == "chart") {
-				if (this.dataset[variable] == "node")
-					$("#nodeOptions").slideDown("fast");
-				else
-					$("#nodeOptions").slideUp("fast");
-			}
-				
+			window[variable] = this.dataset[variable];	
 			updatePage();
 		});
 	}
-	
 	setNavEvents("[data-day]", "day");
 	setNavEvents("[data-chart]", "chart");
 	
-	//Pulsanti per l'interfaccia del nodeChart
+	//Apertura e chiusura del riquadro visualizzazione corrente
+	$("#viewingInfoToggler").on("click", function() {
+		if ($(this).hasClass("glyphicon-arrow-left")) {
+			$(this).removeClass("glyphicon-arrow-left").addClass("glyphicon-arrow-right");
+			viewingInfo.css("transition", "width 0.25s, left 0.25s");
+			viewingInfo.css({
+				left: "calc(" + svgContainer.scrollLeft + "px + 75%)",
+				width: "25%",
+				overflowY: ""
+			});
+			setTimeout(function() {
+				viewingInfo.css("transition", "");
+			}, 250);
+			$("#viewingInfo *").css({
+				transition: "opacity 0.25s 0.15s",
+				opacity: "1"
+			});
+		}
+		else {
+			$(this).removeClass("glyphicon-arrow-right").addClass("glyphicon-arrow-left");
+			viewingInfo.css("transition", "width 0.25s 0.1s, left 0.25s 0.1s");
+			viewingInfo.css({
+				left: "calc(" + svgContainer.scrollLeft + "px + 95%)",
+				width: "5%",
+				overflowY: "hidden"
+			});
+			setTimeout(function() {
+				viewingInfo.css("transition", "");
+			}, 400);
+			$("#viewingInfo *").css({
+				transition: "opacity 0.25s",
+				opacity: "0"
+			});
+		}
+		checkViewingInfoBorderTop();
+	});
+	
+	//Tengo memoria del mouse su viewingInfo
+	viewingInfo.on("mouseenter", function() {
+		mouseOnViewingInfo = true;
+	})
+	.on("mouseleave", function() {
+		mouseOnViewingInfo = false;
+	});
+	
+	
+				/* SPECIFICHE PER NODE CHART */
+	
+	
+	//Personalizzazione del node chart
+	
 	function updateNodeOptions(obj, variable) {
 		window[variable] = parseInt(obj.value);
 		obj.nextElementSibling.innerHTML = window[variable];
@@ -149,12 +111,13 @@ $(document).ready(function() {
 		userSizeK = Number(obj.value);
 		obj.nextElementSibling.innerHTML = userSizeK;
 		d3.selectAll("circle").attr("r", function(d) {
+			if (marking && (d.id == "1278894" || d.id == "839736" || d.id == "external"))
+				return 5;
 			return (d.inValue + d.outValue) / nodeSizeK * userSizeK;
 		});
 		d3.selectAll("line").attr("style", function(d) {
 			return "stroke-width: " + d.value / linkSizeK * (Math.sqrt(userSizeK)) + ";"
 		});
-
 	}
 	
 	$("#maxNodes").on("input", function() {
@@ -167,8 +130,31 @@ $(document).ready(function() {
 	$("#size").on("input", function() {
 		return updateNodeView(this);
 	});
-		
-	//Pulsanti per l'invio della selezione
+	$("#markSpecial").on("change", function() {
+		marking = this.checked;
+		if (marking) 
+			setMarking();
+		else
+			removeMarking();
+		rectCircles = $(".rectCircle");
+	});
+	
+	
+	//Legenda comandi mouse
+	
+	$("#helpOpener").on("mouseenter", function() {
+		$("#helpInfo").css("width", "12%");
+	})
+	.on("mouseleave", function() {
+		$("#helpInfo").css("width", "0px");
+	});
+	
+	
+				/* VISUALIZZAZIONI DA SELEZIONE */
+	
+	
+	//Invio della selezione
+	
 	function sendSelection(chartString) {
 		
 		if (isLoading)
@@ -179,20 +165,20 @@ $(document).ready(function() {
 		//Aspetto dell'interfaccia per ogni query
 		svgContainer.style.borderRadius = "0px 0px 4px 4px";
 		$("#selectionTab").fadeIn().addClass("active");
-		$(".nav-pills li").removeClass("active");
+		$("li[data-chart]").removeClass("active");
 		$("li[data-chart='" + chartString + "']").addClass("active");
 		chart = chartString;
-		if (chartString == "node")
-			$("#nodeOptions").slideDown("fast");
-		else 
-			$("#nodeOptions").slideUp("fast");
 		
 		//Aspetto dell'interfaccia per le query con aree
 		var i = 0;
 		while (i < selection.length && selection[i].area == undefined) {
 			i++;
 		}
+		//Caso di presenza aree
 		if (i < selection.length) {
+			selectionHasArea = true;
+			
+			//Riguardo la scala
 			linkSizeK = 0;
 			nodeSizeK = 0;
 			for (var i = 0; i < selection.length; i++) {
@@ -200,6 +186,8 @@ $(document).ready(function() {
 					linkSizeK += 5;
 					nodeSizeK += 100;
 			}
+			
+			//Riguardo la giornata
 			$("[data-day]").removeClass("active").fadeOut();
 			var i = 0;
 			while (selection[i].timestamp == undefined) {
@@ -213,14 +201,18 @@ $(document).ready(function() {
 				day = dayNames[n];
 				$("[data-day='" + day + "']").addClass("active").fadeIn();
 			}
+			
 		}
+		//Caso di soli nodi
 		else {
+			selectionHasArea = false;
 			linkSizeK = 50;
 			nodeSizeK = 1000;
 			$("[data-day]").removeClass("active").fadeIn();
 			$("[data-day='" + day + "']").addClass("active");
 		}
 		
+		checkViewingInfoBorderTop();
 		updatePage();
 	}
 	
@@ -234,7 +226,8 @@ $(document).ready(function() {
 		return sendSelection("pattern");
 	});
 	
-	//Pulsante per la chiusura della selezione
+	//Chiusura della selezione
+	
 	$("#closeSelection").on("click", function() {
 		if (isLoading)
 			return;
@@ -245,27 +238,76 @@ $(document).ready(function() {
 		$("[data-day]").removeClass("active").fadeIn();
 		$("[data-day='" + day + "']").addClass("active");
 		$("#selectionTab").fadeOut().removeClass("active");
+		checkViewingInfoBorderTop();
 		updatePage();
 	});
 	
-	//Dimensioni dell'SVG
-	svgContainer = document.getElementById("svgContainer");
-	$(window).on("resize", updateSizes);
+	//Riselezione
 	
-	//Interazioni con l'SVG
-	selectionViewer = $("#selectionViewer");
-	svg = $("svg");
+	reselectButton.addEventListener("click", function() {
+		selection = showSelection;
+		updateSelectionViewer();
+		circles.each(function(i, d) {
+			var j = 0;
+			while (j < selection.length && selection[j].id != d.__data__.id) {
+				j++;
+			}
+			if (j < selection.length) {
+				$(d).css({
+					stroke: "rgba(0, 0, 0, 0.9)",
+					strokeWidth: "1.3"
+				});
+				if (d.previousElementSibling != null)
+					$(d.previousElementSibling).css({
+						stroke: "rgba(0, 0, 0, 0.9)",
+						strokeWidth: "1.3"
+					});
+			}
+			else {
+				$(d).css({
+					stroke: "rgba(50, 50, 50, 0.5)",
+					strokeWidth: "1"
+				});
+				if (d.previousElementSibling != null)
+					$(d.previousElementSibling).css({
+						stroke: "rgba(50, 50, 50, 0.5)",
+						strokeWidth: "1"
+					});
+			}
+		});			
+		checkNodeSelection();	//Assign lastTrackedStatus variable
+		if (rects.length == 0)
+			return;
+		$(rects).css({
+			stroke: "",
+			strokeWidth: "",
+			strokeOpacity: ""
+		});
+		checkBarSelection();	//Assigns border to selected bars
+	});
+	
+	
+				/* INTERAZIONE CON IL RIQUADRO SVG */
+				
+				
 	$(svgContainer)
+	
+	//Elimino il men˘ del tasto destro
 	.on("contextmenu", function() {
-		return false;
+		if (!mouseOnViewingInfo)
+			return false;
 	})
+	
+	//Tengo traccia della posizione del mouse
 	.on("mousemove", function(ev) {
 		mouseX = ev.clientX;
 		mouseY = ev.clientY;
 	})
-	.on("mousedown", function(ev) {	
+	
+	//Click
+	.on("mousedown", function(ev) {
 		
-		if (chart != "node")
+		if (chart != "node" || mouseOnViewingInfo)
 			return;
 		
 		//Left Click
@@ -281,6 +323,8 @@ $(document).ready(function() {
 		}
 		
 	})
+	
+	//Rilascio del click
 	.on("mouseup", function(ev) {
 		if (chart != "node")
 			return;
@@ -289,13 +333,17 @@ $(document).ready(function() {
 		else if (ev.button == 2)
 			stopSVGMotion();
 	})
+	
+	//Il mouse esce dal riquadro
 	.on("mouseleave", function(ev) {
 		stopNodeSelection();
 		if (moving)	stopSVGMotion();
 	});
+	
+	//Rotella
 	svgContainer.addEventListener("wheel", function(ev) {
 		
-		if (chart != "node")
+		if (chart != "node" || mouseOnViewingInfo)
 			return;
 		ev.preventDefault();
 		
@@ -314,8 +362,10 @@ $(document).ready(function() {
 		var k = (svg[0].currentScale >= 1) ? svg[0].currentScale : (2 - svg[0].currentScale) * 2;
 		var n = 300 * k;
 		svg.attr("style", "width: " + n + "%; height: " + n + "%;");
-		updateLoaderPosition();
+		updateSVGInterfacePosition();
 	});
+	
+				/* AVVIO DELL'APPLICAZIONE */
 	
 	updatePage();
 	

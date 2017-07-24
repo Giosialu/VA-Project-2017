@@ -9,7 +9,8 @@
 		<script src="node_modules/socket.io-client/dist/socket.io.slim.js"></script>
 		<script src="node_modules/d3/d3.min.js"></script>
 		<script src="node_modules/nvd3/build/nv.d3.min.js"></script>
-		<script src="assets/script.js"></script>
+		<script src="assets/initialize.js"></script>
+		<script src="assets/onload.js"></script>
 		<script src="assets/selections.js"></script>
 		<script src="assets/charts.js"></script>
 		<link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css" />
@@ -36,6 +37,10 @@
 								<label for="nodeSize">Nodes and link size:</label>
 								<input id="size" type="range" min="0.1" max="3" step="0.1" value="1" />
 								<span class="formValue">1</span>
+								<hr />
+								<label title="Assign a different shape and a fixed size to park services ID (1278894, 839736) and external ID.">
+									<input type="checkbox" id="markSpecial" />Mark special IDs
+								</label>
 							</form>					
 						</li>
 						<li data-chart="bar"><a class="updater"><span class="icon barIcon"></span>Areas</a></li>
@@ -56,6 +61,33 @@
 				</nav>
 				<div id="svgContainer">
 					<svg>SVG is not supported in your browser.</svg>
+					<div id="helpInfo">
+						<div>
+							<img alt="Mouse Left Button" src="assets/icons/mouseLeft.png" class="legendImg" />
+							<span>Select</span>
+							<div class="smaller">(<div id="ctrl">ctrl</div>multiple)</div>
+						</div>
+						<div>
+							<img alt="Mouse Right Button" src="assets/icons/mouseRight.png" class="legendImg" />
+							<span>Move</span>
+						</div>
+						<div>
+							<img alt="Mouse Wheel" src="assets/icons/mouseWheel.png" class="legendImg" />
+							<span>Zoom</span>
+						</div>
+					</div>
+					<img id="helpOpener" alt="Help" src="assets/icons/helpIcon.png" />
+					<div id="viewingInfo">
+						<span class="glyphicon glyphicon-arrow-right" id="viewingInfoToggler"></span>
+						<h3>Showing</h3>
+						<div id="viewingContent">
+							<span class="well">Major communications occurred on Friday.</span>
+						</div>
+						<div id="reselectContainer">
+							<hr />
+							<button id="reselect" class="btn btn-default">Reselect</button>
+						</div>
+					</div>
 					<div id="loader">
 						<h3>Loading...</h3>
 						<div class="progress">

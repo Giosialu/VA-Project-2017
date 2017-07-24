@@ -69,10 +69,12 @@ function createNodeChart() {
 		svgContainer.scrollLeft = chartWidth / 3;
 		svgContainer.scrollTop = chartHeight / 3;
 		
-		updateLoaderPosition();
+		updateSVGInterfacePosition();
 		nv.utils.windowResize(nodeChart.update);
 		
 		circles = $("circle");
+		if (marking)
+			setMarking();
 		
 		checkNodeSelection();
 		
@@ -87,6 +89,8 @@ function createBarChart() {
 	nv.addGraph(function() {
 		
         barChart = nv.models.multiBarChart()
+			.width((chartWidth / 3) / 100 * 96)
+			.height((chartHeight / 3))
             .duration(300)
 			.forceY([0,50000]);
 		
@@ -119,7 +123,10 @@ function createBarChart() {
             .datum(data)
             .call(barChart);
 		
-		updateLoaderPosition();
+		svgContainer.scrollLeft = 0;
+		svgContainer.scrollTop = 0;
+		
+		updateSVGInterfacePosition();
         nv.utils.windowResize(barChart.update);
 		
 		barChart.dispatch.on("renderEnd", function() {
@@ -138,7 +145,7 @@ function createBarChart() {
 function updateSizes() {
 	chartWidth = svgContainer.clientWidth * 3;
 	chartHeight = svgContainer.clientHeight * 3;
-	selectionViewer[0].scrollTop = selectionViewer[0].scrollHeight - selectionViewer[0].clientHeight;
+	selectionViewer.scrollTop = selectionViewer.scrollHeight - selectionViewer.clientHeight;
 }
 
 function updatePage() {
@@ -152,29 +159,37 @@ function updatePage() {
 		case "node":
 		$("#loadingBar").css("width", "0%");
 		$("#loader").fadeIn();
-		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes, selection: JSON.stringify(showSelection)}, function(result) {
+		$("#nodeOptions").slideDown("fast");
+		$("#helpOpener").fadeIn("fast");
+		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes, selection: JSON.stringify(showSelection), selectionHasArea: selectionHasArea}, function(result) {
 			data = result;
 			d3.selectAll("svg > *, .nvtooltip").remove();
 			svg[0].currentScale = 1;
 			createNodeChart();
+			updateViewingInfo();
 			$("#loader").fadeOut();
 			removeOnLoading();
+			
 		});
 		break;
 		
 		case "bar":
-		//Direi di passare al server anche qui, così aggiungiamo la visualizzazione della selezione
+		$("#nodeOptions").slideUp("fast");
+		$("#helpOpener").fadeOut("fast");
 		d3.json("assets/data/barData" + day + ".json", function(err, result) {
 			if (err) throw err;
 			data = result;
 			d3.selectAll("svg > *, .nvtooltip").remove();
 			svg[0].currentScale = 1;
 			createBarChart();
+			updateViewingInfo();
 			removeOnLoading();
 		});
 		break;
 		
 		case "pattern":
+		$("#nodeOptions").slideUp("fast");
+		$("#helpOpener").fadeOut("fast");
 		return;
 	}
 	

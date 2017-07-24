@@ -5,6 +5,11 @@ function addNode(node) {
 		stroke: "rgba(0, 0, 0, 0.9)",
 		strokeWidth: "1.3"
 	});
+	if (node.previousElementSibling != null)
+	$(node.previousElementSibling).css({
+		stroke: "rgba(0, 0, 0, 0.9)",
+		strokeWidth: "1.3"
+	});
 	selection.push({
 		id: node.__data__.id
 	});
@@ -16,8 +21,27 @@ function removeNode(node, index) {
 		stroke: "rgba(50, 50, 50, 0.5)",
 		strokeWidth: "1"
 	});
+	if (node.previousElementSibling != null)
+	$(node.previousElementSibling).css({
+		stroke: "rgba(50, 50, 50, 0.5)",
+		strokeWidth: "1"
+	});
 	selection.splice(index, 1);
 	updateSelectionViewer();
+}
+
+function emptyNodeSelection() {
+	selection = [];
+	circles.css({
+		stroke: "rgba(50, 50, 50, 0.5)",
+		strokeWidth: "1"
+	});
+	if (rectCircles.length == 0)
+		return;
+	rectCircles.css({
+		stroke: "rgba(50, 50, 50, 0.5)",
+		strokeWidth: "1"
+	});
 }
 
 function startNodeSelection(ev) {
@@ -37,11 +61,7 @@ function startNodeSelection(ev) {
 				removeNode(ev.target, k);
 		}
 		else {
-			selection = [];
-			circles.not(ev.target).css({
-				stroke: "rgba(50, 50, 50, 0.5)",
-				strokeWidth: "1"
-			});
+			emptyNodeSelection();
 			addNode(ev.target);
 		}
 		return;
@@ -50,11 +70,7 @@ function startNodeSelection(ev) {
 	//Selezione con area
 	ctrl = ev.ctrlKey;
 	if (!ctrl) {
-		selection = [];
-		circles.css({
-			stroke: "rgba(50, 50, 50, 0.5)",
-			strokeWidth: "1"
-		});
+		emptyNodeSelection();
 		updateSelectionViewer();
 	}
 	selector = $(document.createElement("div")).attr("id", "nodeSelector").css({
@@ -132,13 +148,6 @@ function nodeSelection(originX, originY, startX, startY) {
 	
 }
 
-function confirmNodeSelection() {
-	for (var i = 0; i < circles.length; i++) {
-		circles[i].lastTrackedStatus = (circles[i].style.stroke == "rgba(0, 0, 0, 0.9)") ? "selected" : "unselected";
-	}
-	stopNodeSelection();
-}
-
 function stopNodeSelection() {
 	if (selecting) {
 		cancelAnimationFrame(selecting);
@@ -151,6 +160,11 @@ function checkNodeSelection() {
 	for (var i = 0; i < circles.length; i++) {
 		circles[i].lastTrackedStatus = (circles[i].style.stroke == "rgba(0, 0, 0, 0.9)") ? "selected" : "unselected";
 	}
+}
+
+function confirmNodeSelection() {
+	checkNodeSelection();
+	stopNodeSelection();
 }
 
 			/* BARRE */
@@ -254,9 +268,69 @@ function updateSelectionViewer() {
 		document.getElementById("buttonsContainer").style.display = "flex";
 	else 
 		document.getElementById("buttonsContainer").style.display = "";
-	selectionViewer.html(html);
+	selectionViewer.innerHTML = html;
 	
 	//Aspetto
-	selectionViewer[0].scrollTop = selectionViewer[0].scrollHeight - selectionViewer[0].clientHeight;
+	selectionViewer.scrollTop = selectionViewer.scrollHeight - selectionViewer.clientHeight;
 	
+}
+
+function updateViewingInfo() {
+	
+	switch (chart) {
+	
+		case "node":
+	
+		//Senza selezione
+		if (showSelection.length == 0)
+			viewingDescription = "<span class='well'>Major communications occurred on " + day + ".</span>";
+		
+		//Selezione senza aree
+		else {
+			if (!selectionHasArea) {
+				var idHtml = "";
+				for (var i = 0; i < showSelection.length; i++) {
+					idHtml += "<span class='selectionLabel'>ID " + showSelection[i].id + "</span>";
+				}
+				viewingDescription = "<div class='description'>Major communications involving ID:</div>" + idHtml;
+			}
+			
+			//Selezione con aree
+			else {
+				var areaHtml = "";
+				var idHtml = "";
+				for (var i = 0; i < showSelection.length; i++) {
+					if (showSelection[i].id != undefined)
+						idHtml += "<span class='selectionLabel'>ID " + showSelection[i].id + "</span>";
+					else {
+						var startDate = new Date(showSelection[i].timestamp);
+						var endDate = new Date(startDate);
+						endDate.setMinutes(endDate.getMinutes() + 30);
+						var weekDay = dayNames[showSelection[i].timestamp[9]];
+						areaHtml += "<span class='selectionLabel' style='background-color: " + areaColors[showSelection[i].area] + "'>"; 
+						areaHtml += showSelection[i].area + ", " + d3.time.format("%A, %H:%M")(startDate) + "-" + d3.time.format("%H:%M")(endDate);
+						areaHtml += "</span>";
+					}
+				}
+				viewingDescription = "<div class='description'>Major outbound communications occurred in:</div>" + areaHtml;
+				if (idHtml != "")
+					viewingDescription += "<div class='description'>Involving ID:</div>" + idHtml;
+			}
+		}
+		break;
+
+		case "bar":
+		break;
+		
+		case "pattern":
+		return;
+	
+	}
+	
+	//Operazioni indipendenti dal grafico
+	$("#viewingContent").html(viewingDescription);
+	if (showSelection.length > 0)
+		reselectContainer.show();
+	else
+		reselectContainer.hide();
 }

@@ -1,4 +1,4 @@
-			/* Interfaccia */
+			/* Principali elementi interfaccia */
 * {
 	box-sizing: border-box !important;
     -webkit-touch-callout: none;
@@ -82,6 +82,17 @@ h2 {
 	color: black;
 }
 
+.updater[disabled], #loader {
+	cursor: wait !important;
+}
+
+.updater[disabled]:hover {
+	background-color: initial;
+	color: initial !important;
+}
+
+			/* Menu di opzioni per il node chart */
+
 form {
 	position: relative;
 	top: -2px;
@@ -120,13 +131,10 @@ hr {
 	margin-bottom: 10px;
 }
 
-.updater[disabled], #loader {
-	cursor: wait !important;
-}
-
-.updater[disabled]:hover {
-	background-color: initial;
-	color: initial !important;
+#markSpecial {
+	margin: 4px 5px 8px;
+    position: relative;
+    top: 2px;
 }
 
 			/* Interfaccia per la selezione */
@@ -188,9 +196,10 @@ hr {
 	border-radius: 6px;
 	padding: 2px 4px;
 	cursor: default;
+	background-color: #fff;
 }
 
-			/* Riquadro SVG */
+			/* Riquadro centrale */
 			
 #svgContainer {
 	position: relative;
@@ -201,6 +210,126 @@ hr {
 	height: 76vh;
 	overflow: hidden;
 }
+
+/* Legenda interazione node chart */
+
+#helpOpener {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+}
+
+#helpInfo {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 0px;	/* 12% sliding */
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.6);
+	overflow: hidden;
+	transition: width 0.25s;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	color: #eee;
+	text-align: center;
+}
+
+#helpInfo div {
+	display: block;
+	width: 100%;
+}
+
+.legendImg {
+	display: block;
+	width: 32px;
+	margin: 10px auto;
+}
+
+.smaller {
+	font-size: 0.8em;
+}
+
+#ctrl {
+	border: 2px solid black;
+	border-radius: 20%;
+	padding: 1px 2px;
+	background-color: #eee;
+	color: black;
+	display: inline !important;
+	font-size: 10px;
+	margin: 4px 2px;
+}
+
+/* Informazioni sulla visualizzazione */
+
+#viewingInfoToggler {
+	z-index: 1;
+	opacity: 1 !important;
+	position: absolute;
+	left: 12px;
+	top: 16px;
+}
+
+#viewingInfoToggler:hover {
+	cursor: pointer;
+}
+
+#viewingInfo {
+	position: absolute;
+	left: 75%;
+	top: 0px;
+	width: 25%;
+	height: 100%;
+	background-color: rgba(246, 246, 255, 0.85);
+	border-left: 1px solid #ddd;
+	padding: 10px;
+	transition: width 0.25s;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+#viewingInfo h3 {
+	text-align: center;
+	margin: 6px 0px 20px;
+}
+
+#viewingContent {
+	display: flex;
+	justify-content: flex-start;
+	align-items: flex-start;
+	flex-wrap: wrap;
+	align-content: flex-start;
+}
+
+.well {
+	text-align: center;
+	padding: 16px;
+	margin: 10px;
+	background-color: #e4e4e4;
+	border: 1px solid #d2d2d2;
+}
+
+.description {
+	margin: 10px auto;
+	width: 100%;
+}
+
+#reselectContainer {
+	display: none;
+}
+
+#viewingInfo hr {
+	margin: 14px auto 10px;
+}
+
+#reselect {
+	display: block;
+	margin: 12px auto;
+}
+
+/* Barra di caricamento */
 
 #loader {
 	position: absolute;
@@ -227,6 +356,8 @@ hr {
 	top: 50%;
 	left: 10%;
 }
+
+/* Dentro l'elemento SVG */
 
 #nodeSelector {
 	position: absolute;
