@@ -5,6 +5,7 @@ var data;
 var selection = [];
 var showSelection = [];
 var selectionHasArea = false;
+var selectionHasDay = 6;
 
 //Variabili per la dimensione dell'SVG
 var svgContainer;
@@ -39,12 +40,21 @@ var nodeSizeK = 1000;
 var userSizeK = 1;
 var marking = false;
 
+//Variabili per la visualizzazione a barre
+var currentBarTimeSpan = 1800000;	//Il tempo di default sono 30 minuti
+
 //Variabili per il socket
 var socket = io();
 socket.on("message", function(message) {
-	if (message.subject == "loadingData") {
+	switch (message.subject) {
+		
+		case "loadingData":
 		$("#loadingMessage").text(message.text);
 		$("#loadingBar").css("width", message.percentage + "%");
+		break;
+		
+		case "additionalBarData":
+		currentBarTimeSpan = +message.value;
 	}
 });
 

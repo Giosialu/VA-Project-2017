@@ -198,9 +198,12 @@ $(document).ready(function() {
 				i++;
 			}
 			if (i == selection.length) {
+				selectionHasDay = n;
 				day = dayNames[n];
 				$("[data-day='" + day + "']").addClass("active").fadeIn();
 			}
+			else
+				selectionHasDay = 1;	//Code for multiple days in selection
 			
 		}
 		//Caso di soli nodi

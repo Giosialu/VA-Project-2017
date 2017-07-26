@@ -170,6 +170,10 @@ function confirmNodeSelection() {
 			/* BARRE */
 
 function addBar(bar, data) {
+	if (data.timestamp[9] == "1") {
+		$("#multiDaySelection").modal();
+		return;
+	}
 	$(bar).css({
 		stroke: "black",
 		strokeWidth: "1",
@@ -198,7 +202,8 @@ function selectBars(ev) {
 	var data = this.__data__;
 	var obj = {
 		area: data.key,
-		timestamp: data.x
+		timestamp: data.x,
+		timeSpan: currentBarTimeSpan
 	}
 	
 	//Selezione multipla
@@ -231,7 +236,8 @@ function checkBarSelection() {
 		var data = d.__data__;
 		var obj = {
 			area: data.key,
-			timestamp: data.x
+			timestamp: data.x,
+			timeSpan: currentBarTimeSpan
 		}
 		var j = 0;
 		while (j < selection.length && (JSON.stringify(selection[j]) != JSON.stringify(obj))) {
@@ -258,7 +264,7 @@ function updateSelectionViewer() {
 		else {
 			var startDate = new Date(selection[i].timestamp);
 			var endDate = new Date(startDate);
-			endDate.setMinutes(endDate.getMinutes() + 30);
+			endDate.setTime(endDate.getTime() + selection[i].timeSpan);
 			html += "<span class='selectionLabel' style='background-color: " + areaColors[selection[i].area] + "'>"; 
 			html += selection[i].area + ", " + d3.time.format("%A, %H:%M")(startDate) + "-" + d3.time.format("%H:%M")(endDate);
 			html += "</span>";
@@ -277,54 +283,60 @@ function updateSelectionViewer() {
 
 function updateViewingInfo() {
 	
+	//Secondo il tipo di grafico
+	var chartString = "";
 	switch (chart) {
-	
-		case "node":
-	
-		//Senza selezione
-		if (showSelection.length == 0)
-			viewingDescription = "<span class='well'>Major communications occurred on " + day + ".</span>";
 		
-		//Selezione senza aree
-		else {
-			if (!selectionHasArea) {
-				var idHtml = "";
-				for (var i = 0; i < showSelection.length; i++) {
-					idHtml += "<span class='selectionLabel'>ID " + showSelection[i].id + "</span>";
-				}
-				viewingDescription = "<div class='description'>Major communications involving ID:</div>" + idHtml;
-			}
-			
-			//Selezione con aree
-			else {
-				var areaHtml = "";
-				var idHtml = "";
-				for (var i = 0; i < showSelection.length; i++) {
-					if (showSelection[i].id != undefined)
-						idHtml += "<span class='selectionLabel'>ID " + showSelection[i].id + "</span>";
-					else {
-						var startDate = new Date(showSelection[i].timestamp);
-						var endDate = new Date(startDate);
-						endDate.setMinutes(endDate.getMinutes() + 30);
-						var weekDay = dayNames[showSelection[i].timestamp[9]];
-						areaHtml += "<span class='selectionLabel' style='background-color: " + areaColors[showSelection[i].area] + "'>"; 
-						areaHtml += showSelection[i].area + ", " + d3.time.format("%A, %H:%M")(startDate) + "-" + d3.time.format("%H:%M")(endDate);
-						areaHtml += "</span>";
-					}
-				}
-				viewingDescription = "<div class='description'>Major outbound communications occurred in:</div>" + areaHtml;
-				if (idHtml != "")
-					viewingDescription += "<div class='description'>Involving ID:</div>" + idHtml;
-			}
-		}
+		case "node":
+		if (showSelection.length == 0 || !selectionHasArea)
+			chartString = "Major communications ";
+		else
+			chartString = "Major outbound communications ";
 		break;
-
+		
 		case "bar":
+		chartString = "Evolution of outbound communications ";
 		break;
 		
 		case "pattern":
 		return;
+		
+	}
 	
+	//Senza selezione
+	if (showSelection.length == 0)
+		viewingDescription = "<span class='well'>" + chartString + "occurred on " + day + ".</span>";
+	
+	//Selezione senza aree
+	else {
+		if (!selectionHasArea) {
+			var idHtml = "";
+			for (var i = 0; i < showSelection.length; i++) {
+				idHtml += "<span class='selectionLabel'>ID " + showSelection[i].id + "</span>";
+			}
+			viewingDescription = "<div class='description'>" + chartString + "involving ID:</div>" + idHtml;
+		}
+		
+		//Selezione con aree
+		else {
+			var areaHtml = "";
+			var idHtml = "";
+			for (var i = 0; i < showSelection.length; i++) {
+				if (showSelection[i].id != undefined)
+					idHtml += "<span class='selectionLabel'>ID " + showSelection[i].id + "</span>";
+				else {
+					var startDate = new Date(showSelection[i].timestamp);
+					var endDate = new Date(startDate);
+					endDate.setTime(endDate.getTime() + showSelection[i].timeSpan);
+					areaHtml += "<span class='selectionLabel' style='background-color: " + areaColors[showSelection[i].area] + "'>"; 
+					areaHtml += showSelection[i].area + ", " + d3.time.format("%A, %H:%M")(startDate) + "-" + d3.time.format("%H:%M")(endDate);
+					areaHtml += "</span>";
+				}
+			}
+			viewingDescription = "<div class='description'>" + chartString + "occurred in:</div>" + areaHtml;
+			if (idHtml != "")
+				viewingDescription += "<div class='description'>Involving ID:</div>" + idHtml;
+		}
 	}
 	
 	//Operazioni indipendenti dal grafico

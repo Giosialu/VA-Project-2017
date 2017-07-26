@@ -91,8 +91,10 @@ function createBarChart() {
         barChart = nv.models.multiBarChart()
 			.width((chartWidth / 3) / 100 * 96)
 			.height((chartHeight / 3))
-            .duration(300)
-			.forceY([0,50000]);
+            .duration(300);
+			
+		if (showSelection.length == 0)
+			barChart.forceY([0,50000]);
 		
         barChart.xAxis
             .axisLabel("Luogo e ora")
@@ -112,7 +114,7 @@ function createBarChart() {
 			var data = d.data;
 			var startDate = new Date(data.x);
 			var endDate = new Date(startDate);
-			endDate.setMinutes(endDate.getMinutes() + 30);
+			endDate.setTime(endDate.getTime() + currentBarTimeSpan);
 			html += '<h4>'+ d3.time.format("%H:%M")(startDate) + "-" + d3.time.format("%H:%M")(endDate) + ', ' + data.key + '</h4>\n';
 			html += '<p>Outbound communications:' + data.y + '</p>';
 			return html;
@@ -174,15 +176,17 @@ function updatePage() {
 		break;
 		
 		case "bar":
+		$("#loadingBar").css("width", "0%");
+		$("#loader").fadeIn();
 		$("#nodeOptions").slideUp("fast");
 		$("#helpOpener").fadeOut("fast");
-		d3.json("assets/data/barData" + day + ".json", function(err, result) {
-			if (err) throw err;
+		$.get("barRequest", {day: day, selection: JSON.stringify(showSelection), selectionHasArea: selectionHasArea, selectionHasDay: selectionHasDay}, function(result) {
 			data = result;
 			d3.selectAll("svg > *, .nvtooltip").remove();
 			svg[0].currentScale = 1;
 			createBarChart();
 			updateViewingInfo();
+			$("#loader").fadeOut();
 			removeOnLoading();
 		});
 		break;
