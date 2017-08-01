@@ -1,3 +1,8 @@
+
+
+			/* NODE CHART */
+
+			
 function createNodeChart() {
 	
 	nv.addGraph(function() {
@@ -8,10 +13,8 @@ function createNodeChart() {
 			.charge(-80)
 			.friction(0.8)
 			.linkDist(60)
-			.width(chartWidth)
-			.height(chartHeight)
-			
-			
+			.width(chartWidth * 3)
+			.height(chartHeight * 3)
 			
 			//Definizione proprietà dei nodi
 			.nodeExtras(function(nodes) {
@@ -51,31 +54,34 @@ function createNodeChart() {
 				
 
 			})
+			
+			//Definizione proprietà dei link
 			.linkExtras(function(links) {
 				links.attr("style", function(d) {
 					return "stroke-width: " + d.value / linkSizeK * (Math.sqrt(userSizeK)) + ";"
 				});
 			});
 		
+		//Tooltip
 		nodeChart.tooltip.contentGenerator(function(d) {
 			return '<h4>ID: ' + d.id + '</h4>\n<p>Outbound communications: ' + d.outValue + '</p>\n<p>Inbound communications: ' + d.inValue + '</p>';
 		});
 		
+		//Creazione del grafico
 		d3.select("svg")
 			.attr("style", "width: 300%; height: 300%")
 			.datum(data)
 			.call(nodeChart);
-			
-		svgContainer.scrollLeft = chartWidth / 3;
-		svgContainer.scrollTop = chartHeight / 3;
 		
+		//Operazioni preliminari dell'interfaccia
+		svgContainer.scrollLeft = chartWidth;
+		svgContainer.scrollTop = chartHeight;
 		updateSVGInterfacePosition();
-		nv.utils.windowResize(nodeChart.update);
 		
+		//Operazioni preliminari sui nodi
 		circles = $("circle");
 		if (marking)
 			setMarking();
-		
 		checkNodeSelection();
 		
 		return nodeChart;
@@ -84,31 +90,38 @@ function createNodeChart() {
 
 }
 
+
+			/* BAR CHART */
+
+	
 function createBarChart() {
 	
 	nv.addGraph(function() {
 		
+		//Basi del grafico
         barChart = nv.models.multiBarChart()
-			.width((chartWidth / 3) / 100 * 96)
-			.height((chartHeight / 3))
+			.width(chartWidth * 0.96)
+			.height(chartHeight)
             .duration(300);
-			
+		
+		//Scala con range fisso per le visualizzazioni di default
 		if (showSelection.length == 0)
 			barChart.forceY([0,50000]);
 		
+		//Definizione delle assi
         barChart.xAxis
             .axisLabel("Luogo e ora")
             .axisLabelDistance(5)
             .tickFormat(function(d) { 
 				return d3.time.format('%H:%M')(new Date(d)); 
 			});
-		
         barChart.yAxis
             .axisLabel("Comunicazioni")
             .axisLabelDistance(-5)
             .tickFormat(d3.format('d'))
 			.showMaxMin(false);
-			
+		
+		//Tooltip
 		barChart.tooltip.contentGenerator(function(d) {
 			var html = "";
 			var data = d.data;
@@ -120,21 +133,21 @@ function createBarChart() {
 			return html;
 		});
 		
+		//Creazione del grafico
         d3.select('svg')
 			.attr("style", "width: 100%; height: 100%")
             .datum(data)
             .call(barChart);
 		
+		//Operazioni preliminari dell'interfaccia
 		svgContainer.scrollLeft = 0;
 		svgContainer.scrollTop = 0;
-		
 		updateSVGInterfacePosition();
-        nv.utils.windowResize(barChart.update);
 		
+		//Handling degli eventi di selezione delle barre
 		barChart.dispatch.on("renderEnd", function() {
-			//Attraverso l'interazione nuove barre vengono di volta in volta create, aggiornate od eliminate, di conseguenza eseguiamo questo:
 			rects = $("rect.nv-bar");
-			rects.off("click", selectBars).on("click", selectBars);
+			rects.off("click", selectBars).on("click", selectBars);	//Poiché attraverso l'interazione gli elementi che compongono il grafico cambiano
 			checkBarSelection();
 		});
 		
@@ -144,57 +157,217 @@ function createBarChart() {
 	
 }
 
+
+			/* PATTERN CHART */
+
+	
+function createPatternChart() {
+		
+	nv.addGraph(function() {
+		
+					//Definisco la grandezza del grafico e gli estremi delle assi
+					
+		//Riguardo le ordinate	
+		var startY = 0;
+		var endY = d3.max(patternCoords) + 40;
+		patternHeight = endY;
+		
+		//Riguardo le ascisse
+		if (!selectionHasArea) {
+			var minDate = new Date("2014-06-01T06:00:00.000Z");
+			var maxDate = new Date("2014-06-01T22:00:00.000Z");
+			minDate.setDate(selectionHasDay);
+			maxDate.setDate(selectionHasDay + 1);	//Essendo la mezzanotte, deve essere del giorno dopo
+		}
+		else {
+			var startDates = [];
+			var endDates = [];
+			for (var i = 0; i < showSelection.length; i++) {
+				d = showSelection[i];
+				if (d.timestamp == undefined)
+					continue;
+				
+				var tempDate = new Date(d.timestamp);
+				startDates.push(tempDate);
+				var endDate = new Date(tempDate);
+				endDate.setTime(endDate.getTime() + d.timeSpan);
+				endDates.push(endDate);
+			}
+			var minDate = new Date(d3.min(startDates));
+			var maxDate = new Date(d3.max(endDates));
+		}
+		var startX = new Date(minDate);
+		var endX = new Date(maxDate);
+		patternWidth = (maxDate.getTime() - minDate.getTime()) / 2075;
+		var xValues = [];
+		for (var i = new Date(startX); i <= endX; i.setTime(i.getTime() + 300000)) {
+			xValues.push(i.getTime());
+		}
+				
+					//Avvio la creazione del grafico
+		
+		//Le basi
+        patternChart = nv.models.scatterChart()
+			.margin({top: 25, right: 70, bottom: 50, left: 70})
+			.width(patternWidth)
+			.height(patternHeight)
+            .duration(300)
+			.showLegend(false)
+			.forceX([startX, endX])
+			.forceY([startY, endY])
+			.pointRange([40, 40])
+			.x(function(d) {
+				return new Date(d.x);
+			})
+			.y(function(d) {
+				return patternScale(d.y);
+			});
+		
+		//Le assi
+		patternChart.xAxis
+			.tickValues(xValues)
+            .tickFormat(function(x) {
+				return d3.time.format('%H:%M')(new Date(x)); 
+			});	
+        patternChart.yAxis
+			.showMaxMin(false)
+			.tickValues(patternCoords)
+			.tickFormat(function(y) {
+				return invertPatternScale(y);
+			});
+		
+		//Il tooltip
+		patternChart.tooltip.contentGenerator(function(d) {
+			var html = "";
+			d = d.point;
+			html += "ID " + d.id + " ";
+			html += (d.shape == "triangle-up") ? "sending a message to ID " : "receiving a message from ID ";
+			html += d.target + " at " + d3.time.format("%H:%M:%S")(d.x);
+			html += (d.shape == "triangle-up") ? " from " + d.location + "." : ".";
+			return html;
+		});
+		
+		//La creazione del grafico
+		d3.select('svg')
+			.attr("style", "width: " + patternWidth + "px; height: " + patternHeight + "px")
+            .datum(data)
+            .call(patternChart);
+		
+		//Aggiungo le linee
+		var linesGroup = d3.select("svg").insert("g", ":first-child").attr("id", "lines-container");
+		for (var i = 0; i < data.length; i++) {
+			var values = data[i].values;
+			for (var j = 0; j < values.length; j += 2) {
+				var d = values[j];
+				var x = patternChart.xAxis.scale()(new Date(d.x))  + patternChart.margin().left;
+				
+				linesGroup.append("line")
+					.attr("class", "patternLine")
+					.attr("x1", x)	
+					.attr("x2", x)
+					.attr("y1", function() {
+						return patternChart.yAxis.scale()(patternScale(d.y))  + patternChart.margin().top;
+					})
+					.attr("y2", function() {
+						return patternChart.yAxis.scale()(patternScale(values[j + 1].y)) + patternChart.margin().top;
+					});
+			}
+		}
+		
+		//Aggiungo i colori
+		$(".nv-group").each(function(i, d) {
+			var color = areaColors[d.__data__.key];
+			$(d.children).each(function(j, e) {
+				var shape = e.__data__[0].shape;
+				if (shape == "triangle-up")
+					$(e).addClass("sender")
+					.css({
+						stroke: color,
+						strokeWidth: "0.5px",
+						fill: color,
+						fillOpacity: "1"
+					});
+				if (shape == "triangle-down")
+					$(e).addClass("receiver")
+					.css({
+						stroke: "black",
+						strokeWidth: "0.5px",
+						fill: "white",
+						fillOpacity: "1"
+					});
+			});
+		});
+		
+		//Operazioni preliminari dell'interfaccia
+		svgContainer.scrollLeft = 0;
+		svgContainer.scrollTop = 0;
+		updateSVGInterfacePosition();
+		
+		//Prendo tutti i triangoli poiché possibili argomenti nella funzione di zoom
+		triangles = $(".nv-point");
+		
+        return patternChart;
+    });
+	
+	
+}
+
+
+			/* AGGIORNAMENTO DELLE DIMENSIONI */
+
+	
 function updateSizes() {
-	chartWidth = svgContainer.clientWidth * 3;
-	chartHeight = svgContainer.clientHeight * 3;
+	chartWidth = svgContainer.clientWidth;
+	chartHeight = svgContainer.clientHeight;
 	selectionViewer.scrollTop = selectionViewer.scrollHeight - selectionViewer.clientHeight;
 }
 
+
+			/* AGGIORNAMENTO DELL'SVG */
+
+function createGraph(result, graphFunction) {
+	data = result;
+	d3.selectAll("svg > *, .nvtooltip").remove();
+	svg.currentScale = 1;
+	graphFunction.call();
+	updateViewingInfo();
+	$("#loader").fadeOut();
+	removeOnLoading();
+}
+	
 function updatePage() {
 	
 	setOnLoading();
-	
+	$("#loadingBar").css("width", "0%");
+	$("#loader").fadeIn();
 	updateSizes();
 	
 	switch (chart) {
 		
 		case "node":
-		$("#loadingBar").css("width", "0%");
-		$("#loader").fadeIn();
 		$("#nodeOptions").slideDown("fast");
 		$("#helpOpener").fadeIn("fast");
+		$("#helpInfo > div:first-child").show();
 		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes, selection: JSON.stringify(showSelection), selectionHasArea: selectionHasArea}, function(result) {
-			data = result;
-			d3.selectAll("svg > *, .nvtooltip").remove();
-			svg[0].currentScale = 1;
-			createNodeChart();
-			updateViewingInfo();
-			$("#loader").fadeOut();
-			removeOnLoading();
-			
+			createGraph(result, createNodeChart);
 		});
 		break;
 		
 		case "bar":
-		$("#loadingBar").css("width", "0%");
-		$("#loader").fadeIn();
 		$("#nodeOptions").slideUp("fast");
 		$("#helpOpener").fadeOut("fast");
 		$.get("barRequest", {day: day, selection: JSON.stringify(showSelection), selectionHasArea: selectionHasArea, selectionHasDay: selectionHasDay}, function(result) {
-			data = result;
-			d3.selectAll("svg > *, .nvtooltip").remove();
-			svg[0].currentScale = 1;
-			createBarChart();
-			updateViewingInfo();
-			$("#loader").fadeOut();
-			removeOnLoading();
+			createGraph(result, createBarChart);
 		});
 		break;
 		
 		case "pattern":
 		$("#nodeOptions").slideUp("fast");
-		$("#helpOpener").fadeOut("fast");
-		return;
+		$("#helpOpener").fadeIn("fast");
+		$("#helpInfo > div:first-child").hide();
+		$.get("patternRequest", {day: day, selection: JSON.stringify(showSelection)}, function(result) {
+			createGraph(result, createPatternChart);
+		});
+		
 	}
-	
 }

@@ -14,23 +14,25 @@ var server = app.listen(8080, function(err) {
 	if (err) throw err;
 	console.log("The server is listening on :8080.");
 	
+	//Socket
 	var io = require("socket.io")(server);
 	io.on("connection", function() {
 		console.log("Socket activated.");
 	});
-
+	
+	//Connessione al db
 	var conn = mysql.createConnection({
 		host: "localhost",
 		user: "root",
 		password: "myPassword123",
 		database: "Communications"
 	});
-	
 	conn.connect(function(err) {
 		if (err) throw err;
 		console.log("Successfully connected to the db.");
 	});
 	
+	//Hosting
 	app.get("/" || "/index.html", function(req, res) {
 		res.sendFile(__dirname + "index.html");
 		console.log("Sending the website.");
@@ -66,7 +68,7 @@ var server = app.listen(8080, function(err) {
 		});
 	}
 	
-	//Creazione della stringa da inserire nella query SQL in caso di ID ed aree
+	//Creazione della stringa per la selezione di ID nelle query SQL
 	function createINString(ids) {
 		var str = "";
 		for (var i = 0; i < ids.length; i++) {
@@ -78,16 +80,16 @@ var server = app.listen(8080, function(err) {
 	}
 	
 	//Creazione della query SQL
-	function createSQLQuery(columnString, selection, day, restrictive = false) {
+	function createSQLQuery(columnString, selection, day, onlyOutbound = false, restrictive = false) {
 		
-		var queries = [];
-		var ids = [];
+		var queries = [];	//Selezione di aree
+		var ids = [];	//Selezione di ID
 		for (var i = 0; i < selection.length; i++) {
 			if (selection[i].id != undefined)
 				ids.push(selection[i].id);
 			else {
 				var startDate = new Date(selection[i].timestamp);
-				startDate.setHours(startDate.getHours() + 2);
+				startDate.setHours(startDate.getHours() + 2);	//Fuso orario
 				var endDate = new Date(startDate);
 				endDate.setTime(endDate.getTime() + selection[i].timeSpan);
 				var table = dayNames[selection[i].timestamp[9]];
@@ -98,10 +100,12 @@ var server = app.listen(8080, function(err) {
 		
 		var addedCondition = "";
 		if (ids.length > 0) {
-			if (!restrictive)
-				addedCondition = "(fromID IN (" + createINString(ids) + ") || toID IN (" + createINString(ids) + "))";
-			else
+			if (onlyOutbound)
 				addedCondition = "fromID IN (" + createINString(ids) + ")";
+			else if (restrictive)
+				addedCondition = "(fromID IN (" + createINString(ids) + ") && toID IN (" + createINString(ids) + "))";
+			else
+				addedCondition = "(fromID IN (" + createINString(ids) + ") || toID IN (" + createINString(ids) + "))";
 		}
 	
 		var sql = "";
@@ -126,13 +130,15 @@ var server = app.listen(8080, function(err) {
 				/* FUNZIONI PER IL NODE CHART */
 	
 	
-	//Extract data from database and convert in forceDirectedGraph data notation
+	//1) Estrazione dei dati dai database e conversione nella notazione per il force directed graph
 	function extractNodeData(req, res) {
 		var selection = JSON.parse(req.query.selection.toString());
 		
-		/* CASO DI SOLI ID */
+		//1.1 Caso di soli ID (senza connessione al db)
 		
 		if (req.query.selectionHasArea == "false") {
+			
+			//Estrazione dei dati direttamente dal file preparato
 			result = JSON.parse(fs.readFileSync("assets/data/nodeData" + req.query.day + ".json").toString())
 			console.log("Loaded " + result.nodes.length + " nodes and " + result.links.length + " links, now selecting data...");	
 			sendLoadingData("Selecting data...", 50);
@@ -194,7 +200,7 @@ var server = app.listen(8080, function(err) {
 		}
 		
 		
-		/* CASO DI PRESENZA AREE */
+		//1.2 Caso di presenza aree (con connessione al db)
 		
 		//Variabili per il processing
 		var sql = createSQLQuery("fromId, toId", selection, req.query.day);
@@ -228,7 +234,7 @@ var server = app.listen(8080, function(err) {
 			console.log("The query successfully returned " + result.length + " rows.");
 			sendLoadingData("Selecting data...", 50);
 			
-			//Processing dei dati
+			//Conversione della struttura dei dati
 			for (var i = 0; i < result.length; i++) {
 				
 				var fromIndex = findIndex(nodeData, result, i, "fromId");
@@ -258,11 +264,10 @@ var server = app.listen(8080, function(err) {
 		});
 	}
 	
-	//Process node graph data to send only a viewable number of nodes and links
+	//2) Riduzione dei dati ad un numero che ne permetta la visualizzazione
 	function processNodeData(data, req, res, selection = []) {
 		console.log("Received " + data.nodes.length + " nodes and " + data.links.length + " links. Processing...");
 		lastLoadedData = JSON.stringify(data);
-		var startTime = new Date();
 				
 		//Definizione presenza ID non filtrabili
 		var requiredIds = [];		
@@ -363,40 +368,36 @@ var server = app.listen(8080, function(err) {
 		//Operazioni finali
 		data.nodes = filteredNodes;
 		data.links = filteredLinks;
-		
 		console.log("Data processed for " + data.nodes.length + " nodes and " + data.links.length + " links.");
-		var endTime = new Date();
-		if (typeof(startTime) != "undefined")
-			console.log("Processing required " + (endTime.getTime() - startTime.getTime()) / 1000 + " seconds.")
-		
 		sendLoadingData("Receiving data...", 100);
 		sendData(data, res);
 		
 	}
 		
 	
-				/* FUNZIONI PER IL BAR CHART */
+				/* FUNZIONE DEL BAR CHART */
 	
 	
 	function extractBarData(req, res) {
 		
+		//Definizione della query
 		var selection = JSON.parse(req.query.selection.toString());
 		var sql = createSQLQuery("Timestamp, location", selection, req.query.day, true);
 		
+		//Richiesta dei dati al DB
 		console.log("Executing the following query:\n", sql);	
 		conn.query(sql, function(err, result) {
 			if (err) throw err;
 			console.log("The query successfully returned " + result.length + " rows.");
 			sendLoadingData("Processing data...", 66);
 			selectionHasDay = Number(req.query.selectionHasDay);
-		
+			
+			//Definizione del range temporale dei dati
 			if (req.query.selectionHasArea == "false") {
 				var minDate = new Date("2014-06-01T06:00:00.000Z");
 				var maxDate = new Date("2014-06-01T22:00:00.000Z");
-				if (selectionHasDay != 1) {
-					minDate.setDate(selectionHasDay);
-					maxDate.setDate(selectionHasDay + 1);	//Essendo la mezzanotte, deve essere del giorno dopo
-				}
+				minDate.setDate(selectionHasDay);
+				maxDate.setDate(selectionHasDay + 1);	//Essendo la mezzanotte, deve essere del giorno dopo
 			}
 			else {
 				var startDates = [];
@@ -427,6 +428,7 @@ var server = app.listen(8080, function(err) {
 					d.Timestamp.setDate(1);		//Per guardare all'orario indipendentemente dal giorno
 			});
 			
+			//Conversione della struttura dei dati nella notazione richiesta da NVD3
 			result = d3.nest()
 				.key(function(d) {return d.location})
 				.rollup(function(leaves) {
@@ -452,16 +454,86 @@ var server = app.listen(8080, function(err) {
 					return tempValues;
 				})
 				.entries(result);
-				
+			
+			//Assegnazione dei colori in base alle aree
 			result.forEach(function(d) {
 				d.color = areaColors[d.key];
 			});
 			
+			//Operazioni finali
 			console.log("Data have been processed and are now being sent to the client.");
 			sendLoadingData("Receiving data...", 100);
 			io.send({
 				subject: "additionalBarData",
 				value: timeSpan
+			});
+			sendData(result, res);
+			
+		});
+		
+	}
+	
+				/* FUNZIONE DEL PATTERN CHART */
+	
+	
+	function extractPatternData(req, res) {
+		
+		//Definizione della query
+		var selection = JSON.parse(req.query.selection.toString());
+		var sql = createSQLQuery("Timestamp, location, fromId, toId", selection, req.query.day, false, true);
+		
+		//Richiesta dei dati al DB
+		console.log("Executing the following query:\n", sql);	
+		conn.query(sql, function(err, result) {
+			if (err) throw err;
+			console.log("The query successfully returned " + result.length + " rows.");
+			sendLoadingData("Processing data...", 66);
+			
+			//Definizione degli ID coinvolti e delle relative coordinate nel grafico
+			var ids = [];
+			for (var i = 0; i < result.length; i++) {
+				if (ids.indexOf(result[i].fromId) == -1)
+					ids.push(result[i].fromId);
+				if (ids.indexOf(result[i].toId) == -1)
+					ids.push(result[i].toId);
+			}
+			var coords = [];			
+			for (var i = 0; i < ids.length; i++) {
+				coords.push(40 + i * 40);
+			}
+			
+			//Conversione della struttura dei dati nella notazione richiesta da NVD3
+			result = d3.nest()
+				.key(function(d) {return d.location})
+				.rollup(function(leaves) {
+					var values = [];
+					for (var i = 0; i < leaves.length; i++) {
+						values.push({
+							x: leaves[i].Timestamp,
+							y: leaves[i].fromId,
+							shape: "triangle-up",
+							id: leaves[i].fromId,
+							target: leaves[i].toId,
+							location: leaves[i].location
+						}, {
+							x: leaves[i].Timestamp,
+							y: leaves[i].toId,
+							shape: "triangle-down",
+							id: leaves[i].toId,
+							target: leaves[i].fromId
+						});
+					}
+					return values;
+				})
+				.entries(result);
+			
+			//Operazioni finali
+			console.log("Data have been processed and are now being sent to the client.");
+			sendLoadingData("Receiving data...", 100);
+			io.send({
+				subject: "additionalPatternData",
+				ids: ids,
+				coords: coords
 			});
 			sendData(result, res);
 			
@@ -497,6 +569,7 @@ var server = app.listen(8080, function(err) {
 		});
 	});
 	
+	//Aggiornamento quantità massima di nodi o archi del node chart
 	app.get("/updateNodeChart", function(req, res) {
 		filterNodeData(JSON.parse(lastLoadedData), JSON.parse(lastSortedNodes), JSON.parse(lastSortedLinks), req, res);
 	});
@@ -526,6 +599,18 @@ var server = app.listen(8080, function(err) {
 			sendData(JSON.parse(result.toString()), res);
 		});
 		
+	});
+	
+	
+	//Pattern chart
+	app.get("/patternRequest", function(req, res) {
+		console.log("Request received for pattern chart data");
+		console.log("Options:", req.query);
+		
+		//Da una selezione (unico possibile caso)
+		sendLoadingData("Loading data...", 33);
+		extractPatternData(req, res);
+
 	});
 		
 });

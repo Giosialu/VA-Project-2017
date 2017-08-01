@@ -23,6 +23,7 @@ var selector;
 var circles = [];
 var rectCircles = [];
 var rects = [];
+var triangles = [];
 var isLoading = false;
 
 //Variabili per nodi HTML
@@ -43,6 +44,14 @@ var marking = false;
 //Variabili per la visualizzazione a barre
 var currentBarTimeSpan = 1800000;	//Il tempo di default sono 30 minuti
 
+//Variabili per la visualizzazione dei pattern
+var patternIds = [];
+var patternCoords = [];
+var patternScale;
+var invertPatternScale;
+var patternWidth;
+var patternHeight;
+
 //Variabili per il socket
 var socket = io();
 socket.on("message", function(message) {
@@ -55,6 +64,17 @@ socket.on("message", function(message) {
 		
 		case "additionalBarData":
 		currentBarTimeSpan = +message.value;
+		break;
+		
+		case "additionalPatternData":
+		patternIds = message.ids;
+		patternCoords = message.coords;
+		patternScale = d3.scale.ordinal()
+			.domain(patternIds)
+			.range(patternCoords);
+		invertPatternScale = d3.scale.ordinal()
+			.domain(patternCoords)
+			.range(patternIds);
 	}
 });
 
@@ -70,6 +90,11 @@ var dayNames = {
 	"6": "Friday",
 	"7": "Saturday",
 	"8": "Sunday"
+};
+var dayNumbers = {
+	"Friday": 6,
+	"Saturday": 7,
+	"Sunday": 8
 };
 
 //Funzioni di caricamento
@@ -115,7 +140,31 @@ function moveSVG(startLeft, startTop, startX, startY) {
 function stopSVGMotion() {
 	cancelAnimationFrame(moving);
 	moving = false;
-	svg.css("cursor", "default");
+	svg.style.cursor = "default";
+}
+
+//Funzione per il punto di riferimento durante lo zoom
+function findClosest(group) {
+	var closestElement = {
+		el: null,
+		distance: Infinity
+	}
+	for (var i = 0; i < group.length; i++) {
+		var bounding = group[i].getBoundingClientRect();
+		var coords = {
+			x: (bounding.left + bounding.right) / 2,
+			y: (bounding.bottom + bounding.top) / 2
+		};
+		var distX = mouseX - coords.x;
+		var distY = mouseY - coords.y;
+		var dist = Math.sqrt(distX * distX + distY * distY);
+		if (dist < closestElement.distance)
+			closestElement = {
+				el: group[i],
+				distance: dist
+			}
+	}
+	return closestElement.el;
 }
 
 //Aspetto
@@ -130,35 +179,4 @@ function checkViewingInfoBorderTop() {
 			borderTop: "",
 			borderRadius: ""
 		});
-}
-
-//Funzioni per il node chart
-function setMarking() {
-	circles.each(function(i, d) {
-		var data = d.__data__;
-		if (data.id == "1278894" || data.id == "839736" || data.id == "external") {
-			var styleStr = d.getAttribute("style");
-			d3.select(d.parentNode).insert("rect", ":first-child")
-				.attr("x", "-5")
-				.attr("y", "-5")
-				.attr("width", "10")
-				.attr("height", "10")
-				.attr("style", styleStr)
-				.attr("class", "rectCircle");
-			$(d).attr("r", "5").css("opacity", "0");
-		}
-	});
-}
-function removeMarking() {
-	circles.each(function(i, d) {
-		var data = d.__data__;
-		if (data.id == "1278894" || data.id == "839736" || data.id == "external") {
-			$(d.previousElementSibling).remove();
-			
-			$(d).attr("r", function() {
-				return (data.inValue + data.outValue) / nodeSizeK * userSizeK;
-			})
-			.css("opacity", "");
-		}
-	});
 }

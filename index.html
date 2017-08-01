@@ -4,11 +4,11 @@
 		<title>VAST 2015 MC2</title>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+		<script src="node_modules/jquery/dist/jquery.min.js"></script>
 		<script src="node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
 		<script src="node_modules/socket.io-client/dist/socket.io.slim.js"></script>
 		<script src="node_modules/d3/d3.min.js"></script>
-		<script src="node_modules/nvd3/build/nv.d3.min.js"></script>
+		<script src="node_modules/nvd3/build/nv.d3.js"></script><!--//https://github.com/novus/nvd3/pull/448 patch in the script necessary to solve nvd3's scatter chart bug-->
 		<script src="assets/initialize.js"></script>
 		<script src="assets/onload.js"></script>
 		<script src="assets/selections.js"></script>
@@ -60,7 +60,7 @@
 					</ol>
 				</nav>
 				<div id="svgContainer">
-					<svg>SVG is not supported in your browser.</svg>
+					<svg id="svg">SVG is not supported in your browser.</svg>
 					<div id="helpInfo">
 						<div>
 							<img alt="Mouse Left Button" src="assets/icons/mouseLeft.png" class="legendImg" />
@@ -100,9 +100,9 @@
 				<header>
 					<h2>Selection</h2>
 					<div id="buttonsContainer">
-						<button id="sendToNodes" class="updater btn btn-default"><span class="icon nodeIcon"></span>Send</button>
-						<button id="sendToBars" class="updater btn btn-default"><span class="icon barIcon"></span>Send</button>
-						<button id="sendToPatterns" class="updater btn btn-default"><span class="icon patternIcon"></span>Send</button>
+						<button id="sendToNodes" title="View selection in node chart." class="updater btn btn-default"><span class="icon nodeIcon"></span>Send</button>
+						<button id="sendToBars" title="View selection in bar chart." class="updater btn btn-default"><span class="icon barIcon"></span>Send</button>
+						<button id="sendToPatterns" title="View selection in pattern chart." class="updater btn btn-default"><span class="icon patternIcon"></span>Send</button>
 					</div>
 				</header>
 				<div id="selectionViewer"></div>

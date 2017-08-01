@@ -4,9 +4,9 @@ $(document).ready(function() {
 	svgContainer = document.getElementById("svgContainer");
 	selectionViewer = document.getElementById("selectionViewer");
 	reselectButton = document.getElementById("reselect");
+	svg = document.getElementById("svg");
 	reselectContainer = $("#reselectContainer");
 	viewingInfo = $("#viewingInfo");
-	svg = $("svg");
 	$(window).on("resize", updateSizes);
 	
 	
@@ -84,16 +84,14 @@ $(document).ready(function() {
 	});
 	
 	
-				/* SPECIFICHE PER NODE CHART */
+				/* INTERFACCIA DEL NODE CHART */
 	
 	
-	//Personalizzazione del node chart
-	
+	//Aggiornamento quantità massima di nodi ed archi
 	function updateNodeOptions(obj, variable) {
 		window[variable] = parseInt(obj.value);
 		obj.nextElementSibling.innerHTML = window[variable];
 	}
-	
 	function updateNodeChart() {
 		if (isLoading)
 			return;
@@ -101,12 +99,20 @@ $(document).ready(function() {
 		$.get("updateNodeChart", {maxLinks: maxLinks, maxNodes: maxNodes}, function(result) {
 			data = result;
 			d3.selectAll("svg > *, .nvtooltip").remove();
-			svg[0].currentScale = 1;
+			svg.currentScale = 1;
 			createNodeChart();
 			removeOnLoading();
 		});
 	}
+	$("#maxNodes").on("input", function() {
+		return updateNodeOptions(this, "maxNodes");
+	});
+	$("#maxLinks").on("input", function() {
+		return updateNodeOptions(this, "maxLinks");
+	});
+	$("#maxNodes, #maxLinks").on("change", updateNodeChart);
 	
+	//Modifica alle dimensioni di nodi ed archi
 	function updateNodeView(obj) {
 		userSizeK = Number(obj.value);
 		obj.nextElementSibling.innerHTML = userSizeK;
@@ -119,17 +125,40 @@ $(document).ready(function() {
 			return "stroke-width: " + d.value / linkSizeK * (Math.sqrt(userSizeK)) + ";"
 		});
 	}
-	
-	$("#maxNodes").on("input", function() {
-		return updateNodeOptions(this, "maxNodes");
-	});
-	$("#maxLinks").on("input", function() {
-		return updateNodeOptions(this, "maxLinks");
-	});
-	$("#maxNodes, #maxLinks").on("change", updateNodeChart);
 	$("#size").on("input", function() {
 		return updateNodeView(this);
 	});
+	
+	//Marking dei nodi speciali
+	function setMarking() {
+		circles.each(function(i, d) {
+			var data = d.__data__;
+			if (data.id == "1278894" || data.id == "839736" || data.id == "external") {
+				var styleStr = d.getAttribute("style");
+				d3.select(d.parentNode).insert("rect", ":first-child")
+					.attr("x", "-5")
+					.attr("y", "-5")
+					.attr("width", "10")
+					.attr("height", "10")
+					.attr("style", styleStr)
+					.attr("class", "rectCircle");
+				$(d).attr("r", "5").css("opacity", "0");
+			}
+		});
+	}
+	function removeMarking() {
+		circles.each(function(i, d) {
+			var data = d.__data__;
+			if (data.id == "1278894" || data.id == "839736" || data.id == "external") {
+				$(d.previousElementSibling).remove();
+				
+				$(d).attr("r", function() {
+					return (data.inValue + data.outValue) / nodeSizeK * userSizeK;
+				})
+				.css("opacity", "");
+			}
+		});
+	}
 	$("#markSpecial").on("change", function() {
 		marking = this.checked;
 		if (marking) 
@@ -140,7 +169,8 @@ $(document).ready(function() {
 	});
 	
 	
-	//Legenda comandi mouse
+				/* LEGENDA COMANDI MOUSE */
+	
 	
 	$("#helpOpener").on("mouseenter", function() {
 		$("#helpInfo").css("width", "12%");
@@ -153,17 +183,21 @@ $(document).ready(function() {
 				/* VISUALIZZAZIONI DA SELEZIONE */
 	
 	
-	//Invio della selezione
+		//Invio della selezione
 	
 	function sendSelection(chartString) {
 		
 		if (isLoading)
 			return;
 		
-		showSelection = selection;
+		showSelection = [];
+		for (var i = 0; i < selection.length; i++) {
+			showSelection.push(selection[i]);
+		}
 		
 		//Aspetto dell'interfaccia per ogni query
 		svgContainer.style.borderRadius = "0px 0px 4px 4px";
+		$("[data-chart='pattern']").fadeIn();
 		$("#selectionTab").fadeIn().addClass("active");
 		$("li[data-chart]").removeClass("active");
 		$("li[data-chart='" + chartString + "']").addClass("active");
@@ -209,6 +243,7 @@ $(document).ready(function() {
 		//Caso di soli nodi
 		else {
 			selectionHasArea = false;
+			selectionHasDay = dayNumbers[day];
 			linkSizeK = 50;
 			nodeSizeK = 1000;
 			$("[data-day]").removeClass("active").fadeIn();
@@ -217,6 +252,7 @@ $(document).ready(function() {
 		
 		checkViewingInfoBorderTop();
 		updatePage();
+		
 	}
 	
 	$("#sendToNodes").on("click", function() {
@@ -229,12 +265,18 @@ $(document).ready(function() {
 		return sendSelection("pattern");
 	});
 	
-	//Chiusura della selezione
+		//Chiusura della selezione
 	
 	$("#closeSelection").on("click", function() {
 		if (isLoading)
 			return;
 		showSelection = [];
+		$("[data-chart='pattern']").fadeOut();
+		if (chart == "pattern") {
+			chart = "node";
+			$("[data-chart='pattern']").removeClass("active");
+			$("[data-chart='node']").addClass("active");
+		}
 		svgContainer.style.borderRadius = "0px 4px 4px 4px";
 		linkSizeK = 50;
 		nodeSizeK = 1000;
@@ -245,10 +287,13 @@ $(document).ready(function() {
 		updatePage();
 	});
 	
-	//Riselezione
+		//Riselezione
 	
 	reselectButton.addEventListener("click", function() {
-		selection = showSelection;
+		selection = [];
+		for (var i = 0; i < showSelection.length; i++) {
+			selection.push(showSelection[i]);
+		}
 		updateSelectionViewer();
 		circles.each(function(i, d) {
 			var j = 0;
@@ -310,30 +355,28 @@ $(document).ready(function() {
 	//Click
 	.on("mousedown", function(ev) {
 		
-		if (chart != "node" || mouseOnViewingInfo)
+		if (mouseOnViewingInfo)
 			return;
 		
 		//Left Click
-		if (ev.button == 0)
+		if (ev.button == 0 && chart == "node")
 			startNodeSelection(ev);
 
 		//Right Click
-		else if (ev.button == 2) {
+		else if (ev.button == 2 && (chart == "node" || chart == "pattern")) {
 			moving = requestAnimationFrame(function() {
 				return moveSVG(svgContainer.scrollLeft, svgContainer.scrollTop, ev.clientX, ev.clientY);
 			});
-			svg.css("cursor", "move");
+			svg.style.cursor = "move";
 		}
 		
 	})
 	
 	//Rilascio del click
 	.on("mouseup", function(ev) {
-		if (chart != "node")
-			return;
-		if (ev.button == 0)
+		if (ev.button == 0 && chart == "node")
 			confirmNodeSelection();
-		else if (ev.button == 2)
+		else if (ev.button == 2 && (chart == "node" || chart == "pattern"))
 			stopSVGMotion();
 	})
 	
@@ -346,25 +389,28 @@ $(document).ready(function() {
 	//Rotella
 	svgContainer.addEventListener("wheel", function(ev) {
 		
-		if (chart != "node" || mouseOnViewingInfo)
+		if (chart == "bar" || mouseOnViewingInfo)
 			return;
 		ev.preventDefault();
 		
 		//Zoom
-		var startPos = circles[0].getBoundingClientRect();
-		svg[0].currentScale += -ev.deltaY / 2000;
-		if (svg[0].currentScale < 0.5)
-			svg[0].currentScale = 0.5;
-		if (svg[0].currentScale > 2.5)
-			svg[0].currentScale = 2.5;
-		var endPos = circles[0].getBoundingClientRect();
+		var point = findClosest((chart == "node") ? circles : triangles);
+		var startPos = point.getBoundingClientRect();
+		svg.currentScale += -ev.deltaY / 2000;
+		if (svg.currentScale < 0.5)
+			svg.currentScale = 0.5;
+		if (svg.currentScale > 2.5)
+			svg.currentScale = 2.5;
+		var endPos = point.getBoundingClientRect();
 		
 		//Adattamento dei riquadri
 		svgContainer.scrollLeft += (endPos.left - startPos.left);
 		svgContainer.scrollTop += (endPos.top - startPos.top);
-		var k = (svg[0].currentScale >= 1) ? svg[0].currentScale : (2 - svg[0].currentScale) * 2;
-		var n = 300 * k;
-		svg.attr("style", "width: " + n + "%; height: " + n + "%;");
+		var k = (svg.currentScale >= 1) ? svg.currentScale : (2 - svg.currentScale) * 2;
+		if (chart == "node")
+			$(svg).attr("style", "width: " + 300 * k + "%; height: " + 300 * k + "%;");
+		else
+			$(svg).attr("style", "width: " + patternWidth * k + "px; height: " + patternHeight * k + "px;");
 		updateSVGInterfacePosition();
 	});
 	

@@ -1,5 +1,6 @@
 			/* NODI */
 
+//Aggiungere un nodo alla selezione
 function addNode(node) {
 	$(node).css({
 		stroke: "rgba(0, 0, 0, 0.9)",
@@ -16,6 +17,7 @@ function addNode(node) {
 	updateSelectionViewer();
 }
 
+//Rimuovere un nodo dalla selezione
 function removeNode(node, index) {
 	$(node).css({
 		stroke: "rgba(50, 50, 50, 0.5)",
@@ -30,6 +32,7 @@ function removeNode(node, index) {
 	updateSelectionViewer();
 }
 
+//Svuotare la selezione di nodi
 function emptyNodeSelection() {
 	selection = [];
 	circles.css({
@@ -44,9 +47,10 @@ function emptyNodeSelection() {
 	});
 }
 
+//Avvio di una selezione nel node chart
 function startNodeSelection(ev) {
 	
-	svg.css("cursor", "default");
+	svg.style.cursor = "default";
 
 	//Click su nodo
 	if (ev.target.nodeName == "circle") {
@@ -84,6 +88,7 @@ function startNodeSelection(ev) {
 	
 }
 
+//Funzione che avviene durante la selezione multipla nel node chart
 function nodeSelection(originX, originY, startX, startY) {
 	
 	//Disegno del rettangolo
@@ -148,6 +153,7 @@ function nodeSelection(originX, originY, startX, startY) {
 	
 }
 
+//Fine della selezione multipla
 function stopNodeSelection() {
 	if (selecting) {
 		cancelAnimationFrame(selecting);
@@ -156,12 +162,14 @@ function stopNodeSelection() {
 	}
 }
 
+//Tiene memoria dell'ultima condizione del nodo in base al suo aspetto
 function checkNodeSelection() {
 	for (var i = 0; i < circles.length; i++) {
 		circles[i].lastTrackedStatus = (circles[i].style.stroke == "rgba(0, 0, 0, 0.9)") ? "selected" : "unselected";
 	}
 }
 
+//Conferma la selezione multipla dei nodi
 function confirmNodeSelection() {
 	checkNodeSelection();
 	stopNodeSelection();
@@ -169,6 +177,7 @@ function confirmNodeSelection() {
 
 			/* BARRE */
 
+//Aggiunge una barra alla selezione
 function addBar(bar, data) {
 	if (data.timestamp[9] == "1") {
 		$("#multiDaySelection").modal();
@@ -183,6 +192,7 @@ function addBar(bar, data) {
 	updateSelectionViewer();
 }
 
+//Rimuove una barra dalla selezione
 function removeBar(bar, index) {
 	$(bar).css({
 		stroke: "",
@@ -193,6 +203,7 @@ function removeBar(bar, index) {
 	updateSelectionViewer();
 }
 
+//Funzione di selezione delle barre
 function selectBars(ev) {
 
 	if (ev.button != 0)
@@ -231,6 +242,7 @@ function selectBars(ev) {
 
 }
 
+//Controlla se una barra si trova già nella selezione alla sua creazione
 function checkBarSelection() {
 	rects.each(function(i, d) {	
 		var data = d.__data__;
@@ -299,7 +311,7 @@ function updateViewingInfo() {
 		break;
 		
 		case "pattern":
-		return;
+		chartString = "Communications ";
 		
 	}
 	
