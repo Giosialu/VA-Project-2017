@@ -480,7 +480,16 @@ var server = app.listen(8080, function(err) {
 		
 		//Definizione della query
 		var selection = JSON.parse(req.query.selection.toString());
-		var sql = createSQLQuery("Timestamp, location, fromId, toId", selection, req.query.day, false, true);
+		var moreThanOneId = false;
+		var i = 0, nId = 0;
+		while (i < selection.length && nId < 2) {
+			if (selection[i].id != undefined)
+				nId++;
+			i++;
+		}
+		if (nId == 2)
+			moreThanOneId = true;
+		var sql = createSQLQuery("Timestamp, location, fromId, toId", selection, req.query.day, false, moreThanOneId);
 		
 		//Richiesta dei dati al DB
 		console.log("Executing the following query:\n", sql);	

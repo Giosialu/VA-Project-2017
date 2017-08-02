@@ -289,10 +289,12 @@ $(document).ready(function() {
 	
 		//Riselezione
 	
-	reselectButton.addEventListener("click", function() {
-		selection = [];
+	reselectButton.addEventListener("click", function(ev) {
+		if (!ev.ctrlKey)
+			selection = [];
 		for (var i = 0; i < showSelection.length; i++) {
-			selection.push(showSelection[i]);
+			if (selection.indexOf(showSelection[i]) == -1)
+				selection.push(showSelection[i]);
 		}
 		updateSelectionViewer();
 		circles.each(function(i, d) {

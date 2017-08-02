@@ -199,6 +199,8 @@ function createPatternChart() {
 		var startX = new Date(minDate);
 		var endX = new Date(maxDate);
 		patternWidth = (maxDate.getTime() - minDate.getTime()) / 2075;
+		if (patternWidth < 100)
+			patternWidth = 100;
 		var xValues = [];
 		for (var i = new Date(startX); i <= endX; i.setTime(i.getTime() + 300000)) {
 			xValues.push(i.getTime());
