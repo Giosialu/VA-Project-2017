@@ -382,7 +382,7 @@ var server = app.listen(8080, function(err) {
 		
 		//Definizione della query
 		var selection = JSON.parse(req.query.selection.toString());
-		var sql = createSQLQuery("Timestamp, location", selection, req.query.day, true);
+		var sql = createSQLQuery("Timestamp, location", selection, req.query.day, eval(req.query.barOutbound), eval(req.query.barRestrictive));
 		
 		//Richiesta dei dati al DB
 		console.log("Executing the following query:\n", sql);	

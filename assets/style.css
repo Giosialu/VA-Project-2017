@@ -95,7 +95,7 @@ h2 {
 	display: none;
 }
 
-			/* Menu di opzioni per il node chart */
+			/* Menu di opzioni dei chart */
 
 form {
 	position: relative;
@@ -135,10 +135,14 @@ hr {
 	margin-bottom: 10px;
 }
 
-#markSpecial {
+input[type="checkbox"] {
 	margin: 4px 5px 8px;
     position: relative;
     top: 2px;
+}
+
+#barOptions, #onlyNotOutbound {
+	display: none;
 }
 
 			/* Interfaccia per la selezione */
@@ -219,8 +223,8 @@ hr {
 
 #helpOpener {
 	position: absolute;
-	top: 12px;
-	left: 12px;
+	top: 8px;
+	left: 8px;
 }
 
 #helpInfo {

@@ -43,7 +43,19 @@
 								</label>
 							</form>					
 						</li>
-						<li data-chart="bar"><a class="updater"><span class="icon barIcon"></span>Areas</a></li>
+						<li data-chart="bar"><a class="updater"><span class="icon barIcon"></span>Areas</a>
+							<form id="barOptions">
+								<label>
+									<input class="updater" type="checkbox" id="barOutbound" checked />Only outbound communications
+								</label>
+								<div id="onlyNotOutbound">
+									<hr />
+									<label>
+										<input class="updater" type="checkbox" id="barRestrictive" />Only communications between selected IDs
+									</label>
+								</div>
+							</form>				
+						</li>
 						<li data-chart="pattern"><a class="updater"><span class="icon patternIcon"></span>Patterns</a></li>
 					</ol>
 				</nav>

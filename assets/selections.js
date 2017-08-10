@@ -307,7 +307,7 @@ function updateViewingInfo() {
 		break;
 		
 		case "bar":
-		chartString = "Evolution of outbound communications ";
+		chartString = (barOutbound || !selectionHasId) ? "Evolution of outbound communications " : "Evolution of communications";
 		break;
 		
 		case "pattern":

@@ -76,6 +76,10 @@ function createNodeChart() {
 		//Operazioni preliminari dell'interfaccia
 		svgContainer.scrollLeft = chartWidth;
 		svgContainer.scrollTop = chartHeight;
+		if ($("#viewingInfoToggler").hasClass("glyphicon-arrow-right"))
+			svgContainer.scrollLeft += svgContainer.clientWidth * 0.125; //Half width of the opened selectionViewer
+		else
+			svgContainer.scrollLeft += svgContainer.clientWidth * 0.025; //Half width of the closed selectionViewer
 		updateSVGInterfacePosition();
 		
 		//Operazioni preliminari sui nodi
@@ -129,7 +133,8 @@ function createBarChart() {
 			var endDate = new Date(startDate);
 			endDate.setTime(endDate.getTime() + currentBarTimeSpan);
 			html += '<h4>'+ d3.time.format("%H:%M")(startDate) + "-" + d3.time.format("%H:%M")(endDate) + ', ' + data.key + '</h4>\n';
-			html += '<p>Outbound communications:' + data.y + '</p>';
+			html += (showSelection.length == 0 || barOutbound || !selectionHasId) ? '<p>Outbound communications:' : '<p>Communications:';
+			html += data.y + '</p>';
 			return html;
 		});
 		
@@ -348,8 +353,8 @@ function updatePage() {
 		
 		case "node":
 		$("#nodeOptions").slideDown("fast");
-		$("#helpOpener").fadeIn("fast");
-		$("#helpInfo > div:first-child").show();
+		$("#barOptions").slideUp("fast");
+		$("#helpInfo > div").show();
 		$.get("nodeRequest", {day: day, maxLinks: maxLinks, maxNodes: maxNodes, selection: JSON.stringify(showSelection), selectionHasArea: selectionHasArea}, function(result) {
 			createGraph(result, createNodeChart);
 		});
@@ -357,15 +362,19 @@ function updatePage() {
 		
 		case "bar":
 		$("#nodeOptions").slideUp("fast");
-		$("#helpOpener").fadeOut("fast");
-		$.get("barRequest", {day: day, selection: JSON.stringify(showSelection), selectionHasArea: selectionHasArea, selectionHasDay: selectionHasDay}, function(result) {
+		if (showSelection.length > 0 && selectionHasId)
+			$("#barOptions").slideDown("fast");
+		$("#helpInfo > div").hide();
+		$("#helpInfo > div:first-child").show();
+		$.get("barRequest", {day: day, selection: JSON.stringify(showSelection), selectionHasArea: selectionHasArea, selectionHasDay: selectionHasDay, barOutbound: barOutbound, barRestrictive: barRestrictive}, function(result) {
 			createGraph(result, createBarChart);
 		});
 		break;
 		
 		case "pattern":
 		$("#nodeOptions").slideUp("fast");
-		$("#helpOpener").fadeIn("fast");
+		$("#barOptions").slideUp("fast");
+		$("#helpInfo > div").show();
 		$("#helpInfo > div:first-child").hide();
 		$.get("patternRequest", {day: day, selection: JSON.stringify(showSelection)}, function(result) {
 			createGraph(result, createPatternChart);

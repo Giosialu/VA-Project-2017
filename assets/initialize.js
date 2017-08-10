@@ -4,6 +4,7 @@ var chart = "node";
 var data;
 var selection = [];
 var showSelection = [];
+var selectionHasId = false;
 var selectionHasArea = false;
 var selectionHasDay = 6;
 
@@ -43,6 +44,8 @@ var marking = false;
 
 //Variabili per la visualizzazione a barre
 var currentBarTimeSpan = 1800000;	//Il tempo di default sono 30 minuti
+var barOutbound = true;
+var barRestrictive = false;
 
 //Variabili per la visualizzazione dei pattern
 var patternIds = [];
@@ -118,8 +121,8 @@ function updateSVGInterfacePosition() {
 		left: svgContainer.scrollLeft + "px"
 	});
 	$("#helpOpener").css({
-		top: svgContainer.scrollTop + 12 + "px",
-		left: svgContainer.scrollLeft + 12 + "px"
+		top: svgContainer.scrollTop + 8 + "px",
+		left: svgContainer.scrollLeft + 8 + "px"
 	});
 	viewingInfo.css("top", svgContainer.scrollTop + "px");
 	if ($("#viewingInfoToggler").hasClass("glyphicon-arrow-left"))
@@ -179,4 +182,35 @@ function checkViewingInfoBorderTop() {
 			borderTop: "",
 			borderRadius: ""
 		});
+}
+
+//Marking dei nodi
+function setMarking() {
+	circles.each(function(i, d) {
+		var data = d.__data__;
+		if (data.id == "1278894" || data.id == "839736" || data.id == "external") {
+			var styleStr = d.getAttribute("style");
+			d3.select(d.parentNode).insert("rect", ":first-child")
+				.attr("x", "-5")
+				.attr("y", "-5")
+				.attr("width", "10")
+				.attr("height", "10")
+				.attr("style", styleStr)
+				.attr("class", "rectCircle");
+			$(d).attr("r", "5").css("opacity", "0");
+		}
+	});
+}
+function removeMarking() {
+	circles.each(function(i, d) {
+		var data = d.__data__;
+		if (data.id == "1278894" || data.id == "839736" || data.id == "external") {
+			$(d.previousElementSibling).remove();
+			
+			$(d).attr("r", function() {
+				return (data.inValue + data.outValue) / nodeSizeK * userSizeK;
+			})
+			.css("opacity", "");
+		}
+	});
 }

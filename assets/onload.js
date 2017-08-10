@@ -31,7 +31,9 @@ $(document).ready(function() {
 				return;
 			$(this).addClass("active");
 			$(group.not(this)).removeClass("active");
-			window[variable] = this.dataset[variable];	
+			window[variable] = this.dataset[variable];
+			if (variable == "day")
+				selectionHasDay = dayNumbers[day];
 			updatePage();
 		});
 	}
@@ -130,35 +132,6 @@ $(document).ready(function() {
 	});
 	
 	//Marking dei nodi speciali
-	function setMarking() {
-		circles.each(function(i, d) {
-			var data = d.__data__;
-			if (data.id == "1278894" || data.id == "839736" || data.id == "external") {
-				var styleStr = d.getAttribute("style");
-				d3.select(d.parentNode).insert("rect", ":first-child")
-					.attr("x", "-5")
-					.attr("y", "-5")
-					.attr("width", "10")
-					.attr("height", "10")
-					.attr("style", styleStr)
-					.attr("class", "rectCircle");
-				$(d).attr("r", "5").css("opacity", "0");
-			}
-		});
-	}
-	function removeMarking() {
-		circles.each(function(i, d) {
-			var data = d.__data__;
-			if (data.id == "1278894" || data.id == "839736" || data.id == "external") {
-				$(d.previousElementSibling).remove();
-				
-				$(d).attr("r", function() {
-					return (data.inValue + data.outValue) / nodeSizeK * userSizeK;
-				})
-				.css("opacity", "");
-			}
-		});
-	}
 	$("#markSpecial").on("change", function() {
 		marking = this.checked;
 		if (marking) 
@@ -166,6 +139,26 @@ $(document).ready(function() {
 		else
 			removeMarking();
 		rectCircles = $(".rectCircle");
+	});
+	
+	
+				/* INTERFACCIA DEL BAR CHART */
+				
+	$("#barOutbound").on("change", function() {
+		barOutbound = this.checked;
+		if (barOutbound) {
+			$("#barRestrictive")[0].checked = false;;
+			barRestrictive = false;
+			$("#onlyNotOutbound").slideUp();	
+		}
+		else
+			$("#onlyNotOutbound").slideDown();
+		updatePage();
+	});
+	
+	$("#barRestrictive").on("change", function() {
+		barRestrictive = this.checked;
+		updatePage();
 	});
 	
 	
@@ -203,6 +196,13 @@ $(document).ready(function() {
 		$("li[data-chart='" + chartString + "']").addClass("active");
 		chart = chartString;
 		
+		//Definisco se nella selezione sono presenti ID
+		var i = 0;
+		while (i < selection.length && selection[i].id == undefined) {
+			i++;
+		}
+		selectionHasId = !(i == selection.length);
+			
 		//Aspetto dell'interfaccia per le query con aree
 		var i = 0;
 		while (i < selection.length && selection[i].area == undefined) {
@@ -272,6 +272,7 @@ $(document).ready(function() {
 			return;
 		showSelection = [];
 		$("[data-chart='pattern']").fadeOut();
+		$("#barOptions").slideUp("fast");
 		if (chart == "pattern") {
 			chart = "node";
 			$("[data-chart='pattern']").removeClass("active");
